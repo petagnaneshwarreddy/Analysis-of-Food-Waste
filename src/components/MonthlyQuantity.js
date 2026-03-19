@@ -5,301 +5,179 @@ import { CircularProgress } from "@mui/material";
 import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS, CategoryScale, LinearScale,
-  BarElement, Title, Tooltip, Legend
+  BarElement, Title, Tooltip, Legend,
 } from "chart.js";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-const cssStyles = `
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Mulish:wght@300;400;500;600&display=swap');
+const ACCENT = "#38bdf8"; // sky blue for quantity
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
+const css = `
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   .mq-root {
-    min-height: 100vh;
-    background: #f7f4ef;
-    font-family: 'Mulish', sans-serif;
-    padding: 48px 28px 80px;
+    min-height: 100vh; background: #080b08;
+    font-family: 'Outfit', sans-serif; color: #e8f0e9;
+    padding: 48px 24px 88px; position: relative; overflow: hidden;
   }
+  .mq-root::before {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.038) 1px, transparent 1px);
+    background-size: 38px 38px;
+    mask-image: radial-gradient(ellipse 85% 85% at 50% 30%, black 20%, transparent 100%);
+  }
+  .mq-inner { max-width: 1100px; margin: 0 auto; position: relative; z-index: 1; }
 
-  /* Header */
+  /* header */
   .mq-header {
-    max-width: 1100px;
-    margin: 0 auto 40px;
-    border-bottom: 2px solid #1a1a1a;
-    padding-bottom: 20px;
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 16px;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 16px; margin-bottom: 40px; padding-bottom: 22px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
   }
   .mq-eyebrow {
-    display: inline-block;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: #fff;
-    background: #1a1a1a;
-    padding: 4px 12px;
-    border-radius: 4px;
-    margin-bottom: 12px;
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 10px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+    color: rgba(56,189,248,0.75); border: 1px solid rgba(56,189,248,0.20);
+    border-radius: 100px; padding: 5px 14px; margin-bottom: 14px; width: fit-content;
+    background: rgba(56,189,248,0.06);
   }
+  .mq-eyebrow-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: #38bdf8; box-shadow: 0 0 7px rgba(56,189,248,0.7);
+    animation: mqdot 2s ease-in-out infinite;
+  }
+  @keyframes mqdot { 0%,100%{opacity:1} 50%{opacity:0.3} }
   .mq-title {
-    font-family: 'Syne', sans-serif;
-    font-size: clamp(32px, 5vw, 50px);
-    font-weight: 800;
-    color: #1a1a1a;
-    line-height: 1;
-    letter-spacing: -2px;
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(28px, 4.5vw, 48px); font-weight: 900;
+    line-height: 1.06; letter-spacing: -2px; color: #f0f7f0;
   }
-  .mq-title em { font-style: normal; color: #1e8449; }
+  .mq-title em { font-style: italic; color: #38bdf8; }
   .mq-ghost {
-    font-family: 'Syne', sans-serif;
-    font-size: 72px;
-    font-weight: 800;
-    color: rgba(26,26,26,0.06);
-    line-height: 1;
-    letter-spacing: -4px;
-    user-select: none;
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(52px,8vw,88px); font-weight: 900;
+    color: rgba(255,255,255,0.03); line-height:1; letter-spacing:-5px; user-select:none;
   }
 
-  /* Stats strip */
-  .mq-stats {
-    max-width: 1100px;
-    margin: 0 auto 32px;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
+  /* stats */
+  .mq-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 24px; }
+  .mq-stat {
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+    border-top: 2px solid #38bdf8; border-radius: 14px; padding: 20px 22px;
+    transition: background 0.2s;
   }
-  @media (max-width: 600px) { .mq-stats { grid-template-columns: 1fr; } }
+  .mq-stat:hover { background: rgba(56,189,248,0.05); }
+  .mq-stat-label { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: rgba(232,240,233,0.28); margin-bottom: 9px; }
+  .mq-stat-val { font-family: 'DM Mono', monospace; font-size: clamp(22px,3vw,32px); font-weight: 500; line-height: 1; letter-spacing: -1px; color: #38bdf8; }
+  .mq-stat-unit { font-size: 13px; color: rgba(232,240,233,0.28); margin-left: 3px; font-family: 'Outfit', sans-serif; }
+  .mq-stat-sub { font-size: 11px; color: rgba(232,240,233,0.26); margin-top: 5px; }
 
-  .mq-stat-card {
-    background: #fff;
-    border: 1.5px solid rgba(26,26,26,0.08);
-    border-radius: 14px;
-    padding: 20px 22px;
+  /* chart card */
+  .mq-card { background: rgba(255,255,255,0.028); border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; overflow: hidden; }
+  .mq-card-head {
+    padding: 20px 26px 16px; border-bottom: 1px solid rgba(255,255,255,0.065);
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
   }
-  .mq-stat-label {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: rgba(26,26,26,0.4);
-    margin-bottom: 8px;
-  }
-  .mq-stat-value {
-    font-family: 'Syne', sans-serif;
-    font-size: 32px;
-    font-weight: 800;
-    color: #1a1a1a;
-    letter-spacing: -1px;
-  }
-  .mq-stat-value span {
-    font-size: 14px;
-    font-weight: 600;
-    color: rgba(26,26,26,0.4);
-    margin-left: 4px;
-    letter-spacing: 0;
-  }
-  .mq-stat-sub {
-    font-size: 12px;
-    color: rgba(26,26,26,0.4);
-    margin-top: 4px;
-  }
+  .mq-card-title { font-size: 14px; font-weight: 700; color: rgba(232,240,233,0.75); display: flex; align-items: center; gap: 9px; }
+  .mq-card-bar { width: 4px; height: 16px; border-radius: 3px; background: #38bdf8; flex-shrink: 0; }
+  .mq-card-pill { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; padding: 4px 12px; border-radius: 100px; background: rgba(56,189,248,0.10); color: #38bdf8; border: 1px solid rgba(56,189,248,0.20); }
+  .mq-card-body { padding: 24px 26px 28px; height: 340px; }
 
-  /* Chart card */
-  .mq-chart-card {
-    max-width: 1100px;
-    margin: 0 auto;
-    background: #fff;
-    border: 1.5px solid rgba(26,26,26,0.08);
-    border-radius: 16px;
-    overflow: hidden;
-  }
-  .mq-chart-header {
-    padding: 22px 28px 18px;
-    border-bottom: 1.5px solid rgba(26,26,26,0.07);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .mq-chart-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 17px;
-    font-weight: 700;
-    color: #1a1a1a;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .mq-chart-title::before {
-    content: '';
-    display: inline-block;
-    width: 5px;
-    height: 18px;
-    background: #1e8449;
-    border-radius: 3px;
-    flex-shrink: 0;
-  }
-  .mq-chart-badge {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    padding: 4px 10px;
-    border-radius: 20px;
-    background: rgba(30,132,73,0.09);
-    color: #1e8449;
-  }
-  .mq-chart-body {
-    padding: 24px 28px 32px;
-    height: 380px;
-  }
+  /* states */
+  .mq-loading { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:60vh; gap:14px; }
+  .mq-loading-txt { font-size:13px; color:rgba(232,240,233,0.28); }
+  .mq-error { max-width:380px; margin:80px auto; text-align:center; background:rgba(251,113,133,0.07); border:1px solid rgba(251,113,133,0.20); border-radius:16px; padding:32px; }
+  .mq-error-icon { font-size:36px; margin-bottom:12px; }
+  .mq-error-msg { font-size:14px; font-weight:600; color:#fb7185; }
+  .mq-login { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; background:#080b08; font-family:'Playfair Display',serif; font-size:22px; font-weight:700; color:rgba(232,240,233,0.25); }
+  .mq-login span { font-size:48px; }
 
-  /* States */
-  .mq-loading {
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    min-height: 60vh; gap: 16px;
-    color: rgba(26,26,26,0.4);
-    font-size: 14px; font-weight: 500;
-  }
-  .mq-error {
-    max-width: 400px;
-    margin: 80px auto;
-    text-align: center;
-    padding: 32px;
-    background: #fff;
-    border-radius: 16px;
-    border: 1.5px solid rgba(192,57,43,0.2);
-  }
-  .mq-error-icon { font-size: 36px; margin-bottom: 12px; }
-  .mq-error-msg { font-size: 15px; font-weight: 600; color: #c0392b; }
-
-  .mq-login-prompt {
-    min-height: 100vh;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 12px;
-    font-family: 'Syne', sans-serif;
-    font-size: 22px; font-weight: 700;
-    color: rgba(26,26,26,0.3);
-  }
-  .mq-login-prompt span { font-size: 48px; }
+  @media (max-width:700px) { .mq-root{padding:36px 14px 72px;} .mq-stats{grid-template-columns:1fr;} .mq-card-body{height:260px;} }
+  @media (max-width:480px) { .mq-stats{grid-template-columns:1fr 1fr;} .mq-ghost{display:none;} }
 `;
-
-const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
 const MonthlyQuantity = () => {
   const { loggedIn } = useContext(AuthContext);
   const [monthlyQuantity, setMonthlyQuantity] = useState(Array(12).fill(0));
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error,   setError]   = useState(null);
 
-  useEffect(() => {
-    if (loggedIn) fetchMonthlyQuantity();
-  }, [loggedIn]);
+  useEffect(() => { if (loggedIn) fetchData(); }, [loggedIn]);
 
-  const fetchMonthlyQuantity = async () => {
+  const fetchData = async () => {
     setLoading(true); setError(null);
     try {
       const token = localStorage.getItem("token");
-      if (!token) throw new Error("No token found");
-
-      const response = await axios.get("http://localhost:5000/inventory", {
+      if (!token) throw new Error("No token");
+      const res = await axios.get("http://localhost:5000/inventory", {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      const quantityByMonth = Array(12).fill(0);
-      response.data.forEach((item) => {
-        const monthIndex = new Date(item.itemPurchaseDate).getMonth();
-        quantityByMonth[monthIndex] += item.itemQuantity;
+      const byMonth = Array(12).fill(0);
+      res.data.forEach(item => {
+        byMonth[new Date(item.itemPurchaseDate).getMonth()] += item.itemQuantity;
       });
-
-      setMonthlyQuantity(quantityByMonth);
-    } catch (err) {
-      console.error("Error fetching monthly quantity:", err);
-      setError("Failed to fetch data. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+      setMonthlyQuantity(byMonth);
+    } catch (e) { setError("Failed to fetch data. Please try again."); }
+    finally { setLoading(false); }
   };
 
-  const total = monthlyQuantity.reduce((a, b) => a + b, 0);
-  const peakIdx = monthlyQuantity.indexOf(Math.max(...monthlyQuantity));
-  const avgMonthly = Math.round(total / 12);
-
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: "#1a1a1a",
-        titleFont: { family: "Syne", weight: "700", size: 13 },
-        bodyFont: { family: "Mulish", size: 12 },
-        padding: 12,
-        cornerRadius: 8,
-        callbacks: { label: (ctx) => ` ${ctx.parsed.y}g purchased` },
-      },
-    },
-    scales: {
-      x: {
-        grid: { display: false },
-        border: { display: false },
-        ticks: {
-          color: "rgba(26,26,26,0.4)",
-          font: { family: "Mulish", size: 11, weight: "600" },
-        },
-      },
-      y: {
-        grid: { color: "rgba(26,26,26,0.06)" },
-        border: { display: false },
-        ticks: {
-          color: "rgba(26,26,26,0.4)",
-          font: { family: "Mulish", size: 11 },
-          callback: (v) => `${v}g`,
-        },
-      },
-    },
-  };
+  const total    = monthlyQuantity.reduce((a, b) => a + b, 0);
+  const peakIdx  = monthlyQuantity.indexOf(Math.max(...monthlyQuantity));
+  const avg      = Math.round(total / 12);
 
   const chartData = {
     labels: MONTHS,
     datasets: [{
-      label: "Total Quantity (g)",
+      label: "Quantity (g)",
       data: monthlyQuantity,
-      backgroundColor: monthlyQuantity.map((v, i) =>
-        i === peakIdx ? "#1e8449" : "rgba(30,132,73,0.22)"
+      backgroundColor: monthlyQuantity.map((_, i) =>
+        i === peakIdx ? "#38bdf8" : "rgba(56,189,248,0.18)"
       ),
-      borderRadius: 6,
-      borderSkipped: false,
-      hoverBackgroundColor: "#1e8449",
+      hoverBackgroundColor: "#38bdf8",
+      borderRadius: 7, borderSkipped: false,
     }],
   };
 
-  if (!loggedIn) {
-    return (
-      <>
-        <style>{cssStyles}</style>
-        <div className="mq-login-prompt">
-          <span>🔒</span>
-          Please log in to view monthly quantity.
-        </div>
-      </>
-    );
-  }
+  const options = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: "#0d1210",
+        titleFont: { family: "Outfit", weight: "700", size: 13 },
+        bodyFont:  { family: "Outfit", size: 12 },
+        borderColor: "rgba(255,255,255,0.09)", borderWidth: 1,
+        padding: 12, cornerRadius: 9,
+        callbacks: { label: ctx => ` ${ctx.parsed.y}g purchased` },
+      },
+    },
+    scales: {
+      x: {
+        grid: { display: false }, border: { display: false },
+        ticks: { color: "rgba(232,240,233,0.28)", font: { family:"Outfit", size:11, weight:"600" } },
+      },
+      y: {
+        grid: { color: "rgba(255,255,255,0.05)" }, border: { display: false },
+        ticks: { color: "rgba(232,240,233,0.28)", font: { family:"Outfit", size:11 }, callback: v => `${v}g` },
+      },
+    },
+  };
+
+  if (!loggedIn) return (
+    <><style>{css}</style>
+      <div className="mq-login"><span>🔒</span>Please log in to view monthly quantity.</div></>
+  );
 
   return (
-    <>
-      <style>{cssStyles}</style>
-      <div className="mq-root">
+    <><style>{css}</style>
+    <div className="mq-root">
+      <div className="mq-inner">
 
-        {/* Header */}
         <div className="mq-header">
           <div>
-            <div className="mq-eyebrow">Inventory</div>
+            <div className="mq-eyebrow"><span className="mq-eyebrow-dot"/>Inventory</div>
             <h1 className="mq-title">Monthly <em>Quantity</em> Purchased</h1>
           </div>
           <div className="mq-ghost">📦</div>
@@ -307,49 +185,40 @@ const MonthlyQuantity = () => {
 
         {loading ? (
           <div className="mq-loading">
-            <CircularProgress size={36} sx={{ color: "#1e8449" }} />
-            Loading your data…
+            <CircularProgress size={34} sx={{ color: ACCENT }} />
+            <span className="mq-loading-txt">Loading your data…</span>
           </div>
         ) : error ? (
-          <div className="mq-error">
-            <div className="mq-error-icon">⚠️</div>
-            <div className="mq-error-msg">{error}</div>
-          </div>
+          <div className="mq-error"><div className="mq-error-icon">⚠️</div><div className="mq-error-msg">{error}</div></div>
         ) : (
           <>
-            {/* Stats */}
             <div className="mq-stats">
-              <div className="mq-stat-card">
-                <div className="mq-stat-label">Total Purchased</div>
-                <div className="mq-stat-value">{total.toLocaleString()}<span>g</span></div>
-                <div className="mq-stat-sub">Across all months</div>
-              </div>
-              <div className="mq-stat-card">
-                <div className="mq-stat-label">Monthly Average</div>
-                <div className="mq-stat-value">{avgMonthly.toLocaleString()}<span>g</span></div>
-                <div className="mq-stat-sub">Per month</div>
-              </div>
-              <div className="mq-stat-card">
-                <div className="mq-stat-label">Peak Month</div>
-                <div className="mq-stat-value">{MONTHS[peakIdx]}</div>
-                <div className="mq-stat-sub">Highest purchase volume</div>
-              </div>
+              {[
+                { label:"Total Purchased", val: total.toLocaleString(), unit:"g", sub:"Across all months" },
+                { label:"Monthly Average",  val: avg.toLocaleString(),   unit:"g", sub:"Per month" },
+                { label:"Peak Month",       val: MONTHS[peakIdx],        unit:"",  sub:"Highest purchase volume" },
+              ].map(s => (
+                <div className="mq-stat" key={s.label}>
+                  <div className="mq-stat-label">{s.label}</div>
+                  <div className="mq-stat-val">{s.val}<span className="mq-stat-unit">{s.unit}</span></div>
+                  <div className="mq-stat-sub">{s.sub}</div>
+                </div>
+              ))}
             </div>
 
-            {/* Chart */}
-            <div className="mq-chart-card">
-              <div className="mq-chart-header">
-                <div className="mq-chart-title">Quantity by Month</div>
-                <div className="mq-chart-badge">Jan – Dec</div>
+            <div className="mq-card">
+              <div className="mq-card-head">
+                <div className="mq-card-title"><div className="mq-card-bar"/>Quantity by Month</div>
+                <div className="mq-card-pill">Jan – Dec</div>
               </div>
-              <div className="mq-chart-body">
-                <Bar data={chartData} options={chartOptions} />
+              <div className="mq-card-body">
+                <Bar data={chartData} options={options} />
               </div>
             </div>
           </>
         )}
       </div>
-    </>
+    </div></>
   );
 };
 

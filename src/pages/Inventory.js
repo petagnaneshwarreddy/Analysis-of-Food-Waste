@@ -1,508 +1,544 @@
 import React, { useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { AuthContext } from "../AuthContext";
-import { CircularProgress, Typography } from "@mui/material";
+import { CircularProgress } from "@mui/material";
 import { motion, AnimatePresence } from "framer-motion";
+
+const API_URL = process.env.REACT_APP_API_URL;
+
+const css = `
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,700&family=Instrument+Sans:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg:       #080b09;
+    --s1:       #0e1410;
+    --s2:       #141d16;
+    --s3:       #1a261c;
+    --border:   rgba(255,255,255,0.06);
+    --border2:  rgba(255,255,255,0.11);
+    --lime:     #a3e635;
+    --lime-dim: rgba(163,230,53,0.1);
+    --lime-mid: rgba(163,230,53,0.18);
+    --red:      #fb7185;
+    --red-dim:  rgba(251,113,133,0.1);
+    --amber:    #fbbf24;
+    --amber-dim:rgba(251,191,36,0.1);
+    --blue:     #60a5fa;
+    --blue-dim: rgba(96,165,250,0.1);
+    --text:     #e8f0e9;
+    --t2:       rgba(232,240,233,0.5);
+    --t3:       rgba(232,240,233,0.22);
+    --t4:       rgba(232,240,233,0.07);
+    --r:        16px;
+    --r-sm:     9px;
+    --sh:       0 4px 28px rgba(0,0,0,0.5);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  .iv-root {
+    min-height: 100vh;
+    background: var(--bg);
+    font-family: 'Instrument Sans', sans-serif;
+    color: var(--text);
+    padding-bottom: 100px;
+  }
+
+  /* ── HERO ── */
+  .iv-hero {
+    position: relative; overflow: hidden;
+    padding: 48px 24px 40px;
+    background: linear-gradient(145deg, #0c1f0e 0%, #080b09 65%);
+    border-bottom: 1px solid var(--border);
+  }
+  .iv-hero::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(ellipse 55% 70% at 90% 15%, rgba(163,230,53,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 30% 40% at 5%  85%, rgba(163,230,53,0.04) 0%, transparent 60%);
+  }
+  .iv-hero-inner {
+    max-width: 1120px; margin: 0 auto;
+    display: flex; align-items: center;
+    justify-content: space-between; gap: 20px; flex-wrap: wrap;
+    position: relative; z-index: 1;
+  }
+  .iv-badge {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 10px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--lime); border: 1px solid rgba(163,230,53,0.3);
+    background: var(--lime-dim); padding: 5px 14px; border-radius: 20px; margin-bottom: 14px;
+  }
+  .iv-badge::before {
+    content: ''; width: 5px; height: 5px; border-radius: 50%;
+    background: var(--lime); box-shadow: 0 0 8px var(--lime);
+    animation: ivblink 2s ease-in-out infinite;
+  }
+  @keyframes ivblink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+  .iv-title {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(28px, 5vw, 52px); font-weight: 900;
+    line-height: 1.05; letter-spacing: -1.5px; color: var(--text);
+  }
+  .iv-title em { font-style: italic; color: var(--lime); }
+  .iv-sub { margin-top: 8px; font-size: 14px; color: var(--t2); max-width: 380px; line-height: 1.6; }
+  .iv-hero-num {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(52px, 9vw, 88px); font-weight: 900;
+    color: var(--t4); line-height: 1; letter-spacing: -4px; user-select: none; flex-shrink: 0;
+  }
+
+  /* ── STATS ROW ── */
+  .iv-stats {
+    max-width: 1120px; margin: 24px auto 0; padding: 0 16px;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+  }
+  @media (max-width: 480px) { .iv-stats { grid-template-columns: 1fr; } }
+  .iv-stat {
+    background: var(--s1); border: 1px solid var(--border);
+    border-radius: var(--r-sm); padding: 16px 20px;
+    position: relative; overflow: hidden;
+  }
+  .iv-stat::after {
+    content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+    border-radius: 0 0 var(--r-sm) var(--r-sm);
+  }
+  .iv-stat:nth-child(1)::after { background: var(--lime);  }
+  .iv-stat:nth-child(2)::after { background: var(--amber); }
+  .iv-stat:nth-child(3)::after { background: var(--red);   }
+  .iv-stat-n {
+    font-family: 'Fraunces', serif; font-size: 28px; font-weight: 700;
+    line-height: 1; margin-bottom: 4px;
+  }
+  .iv-stat:nth-child(1) .iv-stat-n { color: var(--lime);  }
+  .iv-stat:nth-child(2) .iv-stat-n { color: var(--amber); }
+  .iv-stat:nth-child(3) .iv-stat-n { color: var(--red);   }
+  .iv-stat-l { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--t3); }
+
+  /* ── LAYOUT ── */
+  .iv-body {
+    max-width: 1120px; margin: 20px auto 0; padding: 0 16px;
+    display: grid; grid-template-columns: 340px 1fr;
+    gap: 20px; align-items: start;
+  }
+  @media (max-width: 920px) {
+    .iv-body { grid-template-columns: 1fr; padding: 0 12px; }
+  }
+
+  /* ── FORM CARD ── */
+  .iv-card {
+    background: var(--s1); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 26px; box-shadow: var(--sh);
+    position: sticky; top: 20px;
+  }
+  .iv-card-head {
+    font-family: 'Fraunces', serif; font-size: 20px; font-weight: 700;
+    color: var(--text); margin-bottom: 22px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .iv-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--lime); box-shadow: 0 0 10px var(--lime); flex-shrink: 0;
+  }
+
+  .iv-form  { display: flex; flex-direction: column; gap: 14px; }
+  .iv-field { display: flex; flex-direction: column; gap: 6px; }
+  .iv-row   { display: flex; gap: 12px; }
+  .iv-row .iv-field { flex: 1; }
+  .iv-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--t3);
+  }
+  .iv-input {
+    width: 100%; padding: 11px 14px;
+    font-family: 'Instrument Sans', sans-serif; font-size: 14px; color: var(--text);
+    background: var(--s2); border: 1px solid var(--border);
+    border-radius: var(--r-sm); outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s; -webkit-appearance: none;
+  }
+  .iv-input::placeholder { color: var(--t3); }
+  .iv-input:focus { border-color: var(--lime); box-shadow: 0 0 0 3px rgba(163,230,53,0.1); }
+  .iv-input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.5); cursor: pointer; }
+
+  .iv-btn {
+    padding: 14px; background: var(--lime); color: #0c1a06;
+    font-family: 'Instrument Sans', sans-serif; font-size: 14px; font-weight: 700;
+    border: none; border-radius: var(--r-sm); cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: 48px; box-shadow: 0 4px 20px rgba(163,230,53,0.3);
+  }
+  .iv-btn:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
+  .iv-btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
+
+  .iv-msg {
+    padding: 11px 14px; border-radius: var(--r-sm);
+    font-size: 13px; font-weight: 500; text-align: center;
+  }
+  .iv-msg.ok  { background: var(--lime-dim); color: var(--lime); border: 1px solid rgba(163,230,53,0.2); }
+  .iv-msg.err { background: var(--red-dim);  color: var(--red);  border: 1px solid rgba(251,113,133,0.2); }
+
+  /* ── TABLE CARD ── */
+  .iv-tcard {
+    background: var(--s1); border: 1px solid var(--border);
+    border-radius: var(--r); box-shadow: var(--sh); overflow: hidden;
+  }
+  .iv-tcard-top {
+    padding: 20px 24px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  .iv-pill {
+    background: var(--lime-dim); color: var(--lime);
+    border: 1px solid rgba(163,230,53,0.2); border-radius: 20px;
+    padding: 3px 12px; font-size: 12px; font-weight: 600;
+  }
+
+  /* Desktop table */
+  .iv-tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table.iv-tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 600px; }
+  .iv-tbl th {
+    padding: 11px 16px; text-align: left; font-size: 10px; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase; color: var(--t3);
+    background: var(--s2); border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  .iv-tbl td {
+    padding: 13px 16px; color: var(--text);
+    border-bottom: 1px solid var(--border); vertical-align: middle;
+  }
+  .iv-tbl tbody tr:last-child td { border-bottom: none; }
+  .iv-tbl tbody tr { transition: background 0.12s; }
+  .iv-tbl tbody tr:hover td { background: var(--s2); }
+  .iv-iname { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 700; color: var(--text); }
+  .iv-sub { color: var(--t2); font-size: 12.5px; }
+
+  /* Status badges */
+  .iv-badge-fresh    { background: var(--lime-dim);  color: var(--lime);  border: 1px solid rgba(163,230,53,0.2); }
+  .iv-badge-expiring { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(251,191,36,0.2); }
+  .iv-badge-expired  { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(251,113,133,0.2); }
+  .iv-badge-fresh, .iv-badge-expiring, .iv-badge-expired {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; white-space: nowrap;
+  }
+
+  .iv-del {
+    padding: 6px 12px; background: var(--red-dim); color: var(--red);
+    border: 1px solid rgba(251,113,133,0.2); border-radius: 6px;
+    font-family: 'Instrument Sans', sans-serif; font-size: 12px; font-weight: 700;
+    cursor: pointer; white-space: nowrap; transition: opacity 0.18s, transform 0.12s;
+  }
+  .iv-del:hover { opacity: 0.78; transform: translateY(-1px); }
+
+  /* Mobile cards */
+  .iv-mcards { display: none; flex-direction: column; gap: 12px; padding: 16px; }
+  @media (max-width: 640px) {
+    .iv-tbl-wrap { display: none; }
+    .iv-mcards   { display: flex;  }
+  }
+  .iv-mcard {
+    background: var(--s2); border: 1px solid var(--border);
+    border-radius: var(--r-sm); padding: 16px;
+  }
+  .iv-mcard-top {
+    display: flex; align-items: flex-start;
+    justify-content: space-between; gap: 10px; margin-bottom: 10px;
+  }
+  .iv-mcard-name { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 700; color: var(--text); }
+  .iv-mcard-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .iv-mtag {
+    font-size: 11px; font-weight: 600; color: var(--t2);
+    background: var(--s1); border: 1px solid var(--border);
+    border-radius: 20px; padding: 2px 9px;
+  }
+  .iv-mtag.exp { color: var(--red); background: var(--red-dim); border-color: rgba(251,113,133,0.2); }
+  .iv-mtag.warn { color: var(--amber); background: var(--amber-dim); border-color: rgba(251,191,36,0.2); }
+
+  /* Empty */
+  .iv-empty { padding: 60px 24px; text-align: center; }
+  .iv-empty-ico { font-size: 44px; margin-bottom: 12px; }
+  .iv-empty-txt { color: var(--t2); font-size: 14px; }
+
+  /* Login */
+  .iv-login {
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px; background: var(--bg);
+  }
+  .iv-login-ico { font-size: 52px; }
+  .iv-login-txt { font-family: 'Fraunces', serif; font-size: 22px; color: var(--t2); }
+
+  /* Toast */
+  .iv-toast {
+    position: fixed; top: 20px; left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 22px; border-radius: 100px;
+    font-size: 13px; font-weight: 600;
+    display: flex; align-items: center; gap: 8px;
+    z-index: 999; white-space: nowrap; max-width: 90vw;
+    pointer-events: none;
+  }
+  .iv-toast.ok  { background: var(--lime-dim);  color: var(--lime);  border: 1px solid rgba(163,230,53,0.25);  }
+  .iv-toast.err { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(251,113,133,0.25); }
+`;
 
 const Inventory = () => {
   const { loggedIn } = useContext(AuthContext);
-  const [itemName, setItemName] = useState("");
-  const [itemQuantity, setItemQuantity] = useState("");
-  const [itemCost, setItemCost] = useState("");
-  const [itemPurchaseDate, setItemPurchaseDate] = useState("");
-  const [itemExpiryDate, setItemExpiryDate] = useState("");
-  const [inventoryData, setInventoryData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState("");
+  const [itemName,         setItemName]         = useState("");
+  const [itemQuantity,     setItemQuantity]      = useState("");
+  const [itemCost,         setItemCost]          = useState("");
+  const [itemPurchaseDate, setItemPurchaseDate]  = useState("");
+  const [itemExpiryDate,   setItemExpiryDate]    = useState("");
+  const [inventoryData,    setInventoryData]     = useState([]);
+  const [loading,          setLoading]           = useState(false);
+  const [toast,            setToast]             = useState(null);
 
-  useEffect(() => {
-    if (loggedIn) fetchInventoryData();
-  }, [loggedIn]);
+  useEffect(() => { if (loggedIn) fetchInventory(); }, [loggedIn]);
 
-  const fetchInventoryData = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("No token found");
-      const response = await axios.get("http://localhost:5000/inventory", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setInventoryData(response.data);
-    } catch (error) {
-      console.error("Error fetching inventory data:", error);
-    }
+  const showToast = (msg, type) => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
   };
 
-  const showMessage = (msg, type) => {
-    setMessage(msg);
-    setMessageType(type);
-    setTimeout(() => setMessage(""), 3000);
+  const fetchInventory = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      const res = await axios.get(`${API_URL}/api/inventory`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setInventoryData(Array.isArray(res.data) ? res.data : res.data?.data ?? []);
+    } catch (e) { console.error(e); }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const newItem = { itemName, itemQuantity, itemCost, itemPurchaseDate, itemExpiryDate };
     try {
       const token = localStorage.getItem("token");
-      if (!token) { showMessage("You must be logged in.", "error"); setLoading(false); return; }
-      const response = await axios.post("http://localhost:5000/inventory", newItem, {
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      });
-      showMessage("Item added successfully!", "success");
-      setInventoryData([...inventoryData, response.data.data]);
-      setItemName(""); setItemQuantity(""); setItemCost(""); setItemPurchaseDate(""); setItemExpiryDate("");
-    } catch {
-      showMessage("Failed to add item.", "error");
-    } finally {
-      setLoading(false);
-    }
+      if (!token) { showToast("You must be logged in.", "err"); setLoading(false); return; }
+      const res = await axios.post(
+        `${API_URL}/api/inventory`,
+        { itemName, itemQuantity, itemCost, itemPurchaseDate, itemExpiryDate },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      showToast("Item added!", "ok");
+      const item = res.data?.data || res.data;
+      if (item?._id) setInventoryData(p => [...p, item]);
+      else await fetchInventory();
+      setItemName(""); setItemQuantity(""); setItemCost("");
+      setItemPurchaseDate(""); setItemExpiryDate("");
+    } catch { showToast("Failed to add item.", "err"); }
+    finally { setLoading(false); }
   };
 
   const handleDelete = async (id) => {
+    if (!window.confirm("Delete this item?")) return;
     try {
       const token = localStorage.getItem("token");
-      if (!token) throw new Error("No token found");
-      await axios.delete(`http://localhost:5000/inventory/${id}`, {
+      await axios.delete(`${API_URL}/api/inventory/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setInventoryData(inventoryData.filter((item) => item._id !== id));
-      showMessage("Item deleted successfully!", "success");
-    } catch {
-      showMessage("Failed to delete item.", "error");
-    }
+      setInventoryData(p => p.filter(i => i._id !== id));
+      showToast("Item deleted.", "ok");
+    } catch { showToast("Failed to delete.", "err"); }
   };
 
-  const isExpiringSoon = (expiryDate) => {
-    const days = Math.ceil((new Date(expiryDate) - new Date()) / (1000 * 60 * 60 * 24));
-    return days <= 3 && days >= 0;
-  };
+  const daysUntil = (d) => Math.ceil((new Date(d) - new Date()) / 86400000);
+  const isExpired  = (d) => daysUntil(d) < 0;
+  const isExpiring = (d) => { const n = daysUntil(d); return n >= 0 && n <= 3; };
+  const getStatus  = (d) => isExpired(d) ? "expired" : isExpiring(d) ? "expiring" : "fresh";
 
-  const isExpired = (expiryDate) => new Date(expiryDate) < new Date();
+  const total    = inventoryData.length;
+  const expiring = inventoryData.filter(i => isExpiring(i.itemExpiryDate)).length;
+  const expired  = inventoryData.filter(i => isExpired(i.itemExpiryDate)).length;
+
+  if (!loggedIn) return (
+    <>
+      <style>{css}</style>
+      <div className="iv-login">
+        <div className="iv-login-ico">🔒</div>
+        <div className="iv-login-txt">Please log in to continue</div>
+      </div>
+    </>
+  );
 
   return (
-    <div style={s.page}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
-        * { box-sizing: border-box; }
-        input:focus { outline: none; border-color: #7c3aed !important; box-shadow: 0 0 0 3px rgba(124,58,237,0.15); }
-        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.4); cursor: pointer; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f0ff; }
-        ::-webkit-scrollbar-thumb { background: #c4b5fd; border-radius: 10px; }
-        table tr:hover td { background: #f5f3ff !important; }
-      `}</style>
+    <>
+      <style>{css}</style>
 
-      {loggedIn ? (
-        <>
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: -30 }}
-            animate={{ opacity: 1, y: 0 }}
-            style={s.header}
-          >
-            <div style={s.headerAccent} />
-            <h1 style={s.title}>Your <span style={s.titleHighlight}>Inventory</span></h1>
-            <p style={s.subtitle}>Track, manage, and reduce food waste effortlessly</p>
+      {/* Toast */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div className={`iv-toast ${toast.type}`}
+            initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}>
+            {toast.type === "ok" ? "✓" : "✕"} {toast.msg}
           </motion.div>
+        )}
+      </AnimatePresence>
 
-          {/* Toast Message */}
-          <AnimatePresence>
-            {message && (
-              <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                style={{ ...s.toast, background: messageType === "success" ? "#d1fae5" : "#fee2e2", color: messageType === "success" ? "#065f46" : "#991b1b", borderLeft: `4px solid ${messageType === "success" ? "#10b981" : "#ef4444"}` }}
-              >
-                {messageType === "success" ? "✅" : "❌"} {message}
-              </motion.div>
-            )}
-          </AnimatePresence>
+      <div className="iv-root">
 
-          <div style={s.layout}>
-            {/* Form Card */}
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 }}
-              style={s.formCard}
-            >
-              <div style={s.formHeader}>
-                <span style={s.formIcon}>➕</span>
-                <h2 style={s.formTitle}>Add New Item</h2>
-              </div>
-
-              <form onSubmit={handleSubmit}>
-                <div style={s.fieldGroup}>
-                  <label style={s.label}>Item Name</label>
-                  <input style={s.input} type="text" value={itemName} placeholder="e.g. Tomatoes" onChange={(e) => setItemName(e.target.value)} required />
-                </div>
-                <div style={s.row}>
-                  <div style={{ ...s.fieldGroup, flex: 1 }}>
-                    <label style={s.label}>Quantity (g)</label>
-                    <input style={s.input} type="number" value={itemQuantity} placeholder="500" onChange={(e) => setItemQuantity(e.target.value)} required />
-                  </div>
-                  <div style={{ ...s.fieldGroup, flex: 1 }}>
-                    <label style={s.label}>Cost (₹)</label>
-                    <input style={s.input} type="number" value={itemCost} placeholder="80" onChange={(e) => setItemCost(e.target.value)} required />
-                  </div>
-                </div>
-                <div style={s.fieldGroup}>
-                  <label style={s.label}>📅 Purchase Date</label>
-                  <input style={s.input} type="date" value={itemPurchaseDate} onChange={(e) => setItemPurchaseDate(e.target.value)} required />
-                </div>
-                <div style={s.fieldGroup}>
-                  <label style={s.label}>⏳ Expiry Date</label>
-                  <input style={s.input} type="date" value={itemExpiryDate} onChange={(e) => setItemExpiryDate(e.target.value)} required />
-                </div>
-
-                <motion.button
-                  type="submit"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  style={s.submitBtn}
-                  disabled={loading}
-                >
-                  {loading ? <CircularProgress size={20} style={{ color: "white" }} /> : "Add to Inventory"}
-                </motion.button>
-              </form>
-
-              {/* Summary */}
-              <div style={s.summary}>
-                <div style={s.statBox}>
-                  <span style={s.statNum}>{inventoryData.length}</span>
-                  <span style={s.statLabel}>Total Items</span>
-                </div>
-                <div style={s.statBox}>
-                  <span style={{ ...s.statNum, color: "#f59e0b" }}>{inventoryData.filter(i => isExpiringSoon(i.itemExpiryDate)).length}</span>
-                  <span style={s.statLabel}>Expiring Soon</span>
-                </div>
-                <div style={s.statBox}>
-                  <span style={{ ...s.statNum, color: "#ef4444" }}>{inventoryData.filter(i => isExpired(i.itemExpiryDate)).length}</span>
-                  <span style={s.statLabel}>Expired</span>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Table Card */}
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
-              style={s.tableCard}
-            >
-              <div style={s.tableTopBar}>
-                <h2 style={s.tableTitle}>📦 Inventory List</h2>
-                <span style={s.tableCount}>{inventoryData.length} items</span>
-              </div>
-
-              <div style={{ overflowX: "auto" }}>
-                <table style={s.table}>
-                  <thead>
-                    <tr>
-                      {["Item Name", "Qty (g)", "Cost (₹)", "Purchase Date", "Expiry Date", "Status", "Action"].map(h => (
-                        <th key={h} style={s.th}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <AnimatePresence>
-                      {inventoryData.length > 0 ? inventoryData.map((item, i) => {
-                        const expired = isExpired(item.itemExpiryDate);
-                        const expiring = isExpiringSoon(item.itemExpiryDate);
-                        const status = expired ? { label: "Expired", color: "#fef2f2", badge: "#fee2e2", text: "#dc2626" }
-                          : expiring ? { label: "Expiring Soon", color: "#fffbeb", badge: "#fef3c7", text: "#d97706" }
-                          : { label: "Fresh", color: "#fff", badge: "#d1fae5", text: "#059669" };
-                        return (
-                          <motion.tr
-                            key={item._id}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            transition={{ delay: i * 0.04 }}
-                          >
-                            <td style={{ ...s.td, fontWeight: 600, color: "#1e1b4b" }}>{item.itemName}</td>
-                            <td style={s.td}>{item.itemQuantity}g</td>
-                            <td style={s.td}>₹{Number(item.itemCost).toFixed(2)}</td>
-                            <td style={s.td}>{new Date(item.itemPurchaseDate).toLocaleDateString()}</td>
-                            <td style={{ ...s.td, color: expired ? "#dc2626" : expiring ? "#d97706" : "#374151" }}>
-                              {new Date(item.itemExpiryDate).toLocaleDateString()}
-                            </td>
-                            <td style={s.td}>
-                              <span style={{ ...s.badge, background: status.badge, color: status.text }}>
-                                {status.label}
-                              </span>
-                            </td>
-                            <td style={s.td}>
-                              <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                style={s.deleteBtn}
-                                onClick={() => handleDelete(item._id)}
-                              >
-                                🗑 Delete
-                              </motion.button>
-                            </td>
-                          </motion.tr>
-                        );
-                      }) : (
-                        <tr>
-                          <td colSpan="7" style={s.noData}>
-                            <div style={{ fontSize: "3rem", marginBottom: "10px" }}>📭</div>
-                            <div>No items in inventory yet. Add your first item!</div>
-                          </td>
-                        </tr>
-                      )}
-                    </AnimatePresence>
-                  </tbody>
-                </table>
-              </div>
-            </motion.div>
+        {/* Hero */}
+        <div className="iv-hero">
+          <div className="iv-hero-inner">
+            <div>
+              <div className="iv-badge">Kitchen Manager</div>
+              <h1 className="iv-title">Your <em>Inventory</em></h1>
+              <p className="iv-sub">Track, manage and reduce food waste effortlessly.</p>
+            </div>
+            <div className="iv-hero-num">{total}</div>
           </div>
-        </>
-      ) : (
-        <div style={{ textAlign: "center", padding: "100px 20px" }}>
-          <div style={{ fontSize: "4rem", marginBottom: "16px" }}>🔒</div>
-          <Typography style={{ color: "#6b7280", fontSize: "1.2rem" }}>Please log in to view your Inventory.</Typography>
         </div>
-      )}
-    </div>
+
+        {/* Stats */}
+        <div className="iv-stats">
+          {[
+            { n: total,    l: "Total Items"    },
+            { n: expiring, l: "Expiring Soon"  },
+            { n: expired,  l: "Expired"        },
+          ].map(({ n, l }) => (
+            <div className="iv-stat" key={l}>
+              <div className="iv-stat-n">{n}</div>
+              <div className="iv-stat-l">{l}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="iv-body">
+
+          {/* Form */}
+          <div className="iv-card">
+            <div className="iv-card-head"><span className="iv-dot" />Add New Item</div>
+            <form onSubmit={handleSubmit} className="iv-form">
+
+              <div className="iv-field">
+                <label className="iv-label">Item Name</label>
+                <input className="iv-input" type="text" value={itemName}
+                  placeholder="e.g. Tomatoes" onChange={e => setItemName(e.target.value)} required />
+              </div>
+
+              <div className="iv-row">
+                <div className="iv-field">
+                  <label className="iv-label">Quantity (g)</label>
+                  <input className="iv-input" type="number" value={itemQuantity}
+                    placeholder="500" onChange={e => setItemQuantity(e.target.value)} required />
+                </div>
+                <div className="iv-field">
+                  <label className="iv-label">Cost (₹)</label>
+                  <input className="iv-input" type="number" value={itemCost}
+                    placeholder="80" onChange={e => setItemCost(e.target.value)} required />
+                </div>
+              </div>
+
+              <div className="iv-field">
+                <label className="iv-label">Purchase Date</label>
+                <input className="iv-input" type="date" value={itemPurchaseDate}
+                  onChange={e => setItemPurchaseDate(e.target.value)} required />
+              </div>
+
+              <div className="iv-field">
+                <label className="iv-label">Expiry Date</label>
+                <input className="iv-input" type="date" value={itemExpiryDate}
+                  onChange={e => setItemExpiryDate(e.target.value)} required />
+              </div>
+
+              <button className="iv-btn" type="submit" disabled={loading}>
+                {loading ? <CircularProgress size={20} style={{ color: "#0c1a06" }} /> : "Add to Inventory →"}
+              </button>
+            </form>
+          </div>
+
+          {/* Table */}
+          <div className="iv-tcard">
+            <div className="iv-tcard-top">
+              <div className="iv-card-head" style={{ margin: 0 }}><span className="iv-dot" />Inventory List</div>
+              {inventoryData.length > 0 && <span className="iv-pill">{inventoryData.length} items</span>}
+            </div>
+
+            {inventoryData.length === 0 ? (
+              <div className="iv-empty">
+                <div className="iv-empty-ico">📦</div>
+                <div className="iv-empty-txt">No items yet. Add your first inventory item.</div>
+              </div>
+            ) : (
+              <>
+                {/* Desktop */}
+                <div className="iv-tbl-wrap">
+                  <table className="iv-tbl">
+                    <thead>
+                      <tr>{["Item","Qty","Cost","Purchased","Expires","Status","Action"].map(h => <th key={h}>{h}</th>)}</tr>
+                    </thead>
+                    <tbody>
+                      <AnimatePresence>
+                        {inventoryData.map((item, i) => {
+                          const st = getStatus(item.itemExpiryDate);
+                          return (
+                            <motion.tr key={item._id}
+                              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, x: -20 }} transition={{ delay: i * 0.03 }}>
+                              <td><span className="iv-iname">{item.itemName}</span></td>
+                              <td><span className="iv-sub">{item.itemQuantity}g</span></td>
+                              <td><span className="iv-sub">₹{Number(item.itemCost).toFixed(2)}</span></td>
+                              <td><span className="iv-sub">{new Date(item.itemPurchaseDate).toLocaleDateString()}</span></td>
+                              <td>
+                                <span className={`iv-sub ${st === "expired" ? "iv-sub-red" : st === "expiring" ? "iv-sub-amber" : ""}`}
+                                  style={{ color: st === "expired" ? "var(--red)" : st === "expiring" ? "var(--amber)" : "var(--t2)" }}>
+                                  {new Date(item.itemExpiryDate).toLocaleDateString()}
+                                </span>
+                              </td>
+                              <td>
+                                <span className={`iv-badge-${st === "fresh" ? "fresh" : st === "expiring" ? "expiring" : "expired"}`}>
+                                  {st === "fresh" ? "✓ Fresh" : st === "expiring" ? "⚠ Expiring" : "✕ Expired"}
+                                </span>
+                              </td>
+                              <td>
+                                <button className="iv-del" onClick={() => handleDelete(item._id)}>Delete</button>
+                              </td>
+                            </motion.tr>
+                          );
+                        })}
+                      </AnimatePresence>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile */}
+                <div className="iv-mcards">
+                  <AnimatePresence>
+                    {inventoryData.map((item, i) => {
+                      const st = getStatus(item.itemExpiryDate);
+                      return (
+                        <motion.div key={item._id} className="iv-mcard"
+                          initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, x: -20 }} transition={{ delay: i * 0.03 }}>
+                          <div className="iv-mcard-top">
+                            <div>
+                              <div className="iv-mcard-name">{item.itemName}</div>
+                            </div>
+                            <span className={`iv-badge-${st === "fresh" ? "fresh" : st === "expiring" ? "expiring" : "expired"}`}>
+                              {st === "fresh" ? "✓ Fresh" : st === "expiring" ? "⚠ Expiring" : "✕ Expired"}
+                            </span>
+                          </div>
+                          <div className="iv-mcard-tags">
+                            <span className="iv-mtag">📦 {item.itemQuantity}g</span>
+                            <span className="iv-mtag">₹{Number(item.itemCost).toFixed(2)}</span>
+                            <span className="iv-mtag">🛒 {new Date(item.itemPurchaseDate).toLocaleDateString()}</span>
+                            <span className={`iv-mtag ${st === "expired" ? "exp" : st === "expiring" ? "warn" : ""}`}>
+                              ⏳ {new Date(item.itemExpiryDate).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <button className="iv-del" onClick={() => handleDelete(item._id)}>Delete</button>
+                        </motion.div>
+                      );
+                    })}
+                  </AnimatePresence>
+                </div>
+              </>
+            )}
+          </div>
+
+        </div>
+      </div>
+    </>
   );
 };
 
 export default Inventory;
-
-const s = {
-  page: {
-    minHeight: "100vh",
-    background: "linear-gradient(160deg, #f5f3ff 0%, #ede9fe 40%, #fdf4ff 100%)",
-    padding: "40px 24px 60px",
-    fontFamily: "'DM Sans', sans-serif",
-  },
-  header: {
-    textAlign: "center",
-    marginBottom: "40px",
-    position: "relative",
-  },
-  headerAccent: {
-    width: "80px",
-    height: "5px",
-    background: "linear-gradient(90deg, #7c3aed, #a78bfa)",
-    borderRadius: "10px",
-    margin: "0 auto 20px",
-  },
-  title: {
-    fontFamily: "'Playfair Display', serif",
-    fontSize: "clamp(2rem, 5vw, 3.2rem)",
-    fontWeight: 800,
-    color: "#1e1b4b",
-    margin: "0 0 8px",
-  },
-  titleHighlight: {
-    background: "linear-gradient(135deg, #7c3aed, #c026d3)",
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
-  },
-  subtitle: {
-    color: "#6b7280",
-    fontSize: "1rem",
-    margin: 0,
-  },
-  toast: {
-    maxWidth: "500px",
-    margin: "0 auto 24px",
-    padding: "14px 20px",
-    borderRadius: "10px",
-    fontSize: "14px",
-    fontWeight: 600,
-  },
-  layout: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "28px",
-    maxWidth: "1400px",
-    margin: "0 auto",
-    alignItems: "flex-start",
-  },
-  formCard: {
-    background: "#fff",
-    borderRadius: "20px",
-    padding: "32px",
-    boxShadow: "0 4px 30px rgba(124,58,237,0.1)",
-    width: "340px",
-    flexShrink: 0,
-    border: "1px solid #ede9fe",
-  },
-  formHeader: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    marginBottom: "24px",
-  },
-  formIcon: {
-    width: "36px",
-    height: "36px",
-    background: "#f5f3ff",
-    borderRadius: "10px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "18px",
-  },
-  formTitle: {
-    fontFamily: "'Playfair Display', serif",
-    fontSize: "1.3rem",
-    fontWeight: 700,
-    color: "#1e1b4b",
-    margin: 0,
-  },
-  fieldGroup: {
-    marginBottom: "16px",
-  },
-  row: {
-    display: "flex",
-    gap: "12px",
-    marginBottom: "0",
-  },
-  label: {
-    display: "block",
-    fontSize: "13px",
-    fontWeight: 600,
-    color: "#4b5563",
-    marginBottom: "6px",
-  },
-  input: {
-    width: "100%",
-    padding: "11px 14px",
-    borderRadius: "10px",
-    border: "2px solid #e5e7eb",
-    fontSize: "14px",
-    color: "#1f2937",
-    background: "#fafafa",
-    transition: "all 0.2s",
-  },
-  submitBtn: {
-    width: "100%",
-    padding: "13px",
-    background: "linear-gradient(135deg, #7c3aed, #a855f7)",
-    color: "#fff",
-    border: "none",
-    borderRadius: "12px",
-    fontSize: "15px",
-    fontWeight: 700,
-    cursor: "pointer",
-    marginTop: "8px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "8px",
-    boxShadow: "0 4px 15px rgba(124,58,237,0.3)",
-  },
-  summary: {
-    display: "flex",
-    gap: "10px",
-    marginTop: "24px",
-    paddingTop: "20px",
-    borderTop: "1px solid #f3f4f6",
-  },
-  statBox: {
-    flex: 1,
-    background: "#f9fafb",
-    borderRadius: "12px",
-    padding: "12px 8px",
-    textAlign: "center",
-    border: "1px solid #f3f4f6",
-  },
-  statNum: {
-    display: "block",
-    fontSize: "1.5rem",
-    fontWeight: 800,
-    color: "#7c3aed",
-    lineHeight: 1.2,
-  },
-  statLabel: {
-    fontSize: "11px",
-    color: "#9ca3af",
-    fontWeight: 500,
-  },
-  tableCard: {
-    flex: 1,
-    minWidth: "300px",
-    background: "#fff",
-    borderRadius: "20px",
-    boxShadow: "0 4px 30px rgba(124,58,237,0.1)",
-    border: "1px solid #ede9fe",
-    overflow: "hidden",
-  },
-  tableTopBar: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "22px 28px",
-    borderBottom: "1px solid #f3f4f6",
-  },
-  tableTitle: {
-    fontFamily: "'Playfair Display', serif",
-    fontSize: "1.2rem",
-    fontWeight: 700,
-    color: "#1e1b4b",
-    margin: 0,
-  },
-  tableCount: {
-    background: "#f5f3ff",
-    color: "#7c3aed",
-    fontWeight: 700,
-    fontSize: "13px",
-    padding: "4px 12px",
-    borderRadius: "20px",
-  },
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-    fontSize: "14px",
-  },
-  th: {
-    padding: "14px 20px",
-    textAlign: "left",
-    fontSize: "12px",
-    fontWeight: 700,
-    color: "#6b7280",
-    textTransform: "uppercase",
-    letterSpacing: "0.05em",
-    background: "#fafafa",
-    borderBottom: "2px solid #f3f4f6",
-    whiteSpace: "nowrap",
-  },
-  td: {
-    padding: "16px 20px",
-    borderBottom: "1px solid #f9fafb",
-    color: "#374151",
-    transition: "background 0.15s",
-  },
-  badge: {
-    padding: "4px 12px",
-    borderRadius: "20px",
-    fontSize: "12px",
-    fontWeight: 700,
-    whiteSpace: "nowrap",
-  },
-  deleteBtn: {
-    background: "transparent",
-    color: "#ef4444",
-    border: "1.5px solid #fecaca",
-    padding: "6px 14px",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontSize: "13px",
-    fontWeight: 600,
-    transition: "all 0.2s",
-    whiteSpace: "nowrap",
-  },
-  noData: {
-    textAlign: "center",
-    padding: "60px 20px",
-    color: "#9ca3af",
-    fontSize: "15px",
-  },
-};

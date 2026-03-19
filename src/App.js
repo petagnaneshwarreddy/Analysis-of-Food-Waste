@@ -4,28 +4,32 @@ import {
   Route,
   Routes,
   Navigate,
-  useLocation
+  useLocation,
 } from "react-router-dom";
 
-import Navbar from "./components/Navbar";
-import Home from "./pages/Home";
-import Footer from "./components/Footer";
-import Inventory from "./pages/Inventory";
-import SignUp from "./pages/SignUp";
-import Login from "./pages/Login";
-import ECOProgress from "./pages/ECOProgress";
-import Waste from "./pages/Waste";
-import RecipeSearch from "./pages/RecipeSearch";
+import Navbar            from "./components/Navbar";
+import Home              from "./pages/Home";
+import Footer            from "./components/Footer";
+import Inventory         from "./pages/Inventory";
+import SignUp            from "./pages/SignUp";
+import Login             from "./pages/Login";
+import ECOProgress       from "./pages/ECOProgress";
+import Waste             from "./pages/Waste";
+import RecipeSearch      from "./pages/RecipeSearch";
 import NutritionAnalysis from "./pages/NutritionAnalysis";
-import Display from "./pages/Display";
+import NourishInitiative from "./pages/NourishInitiative";
+import Display           from "./pages/Display";
+import Profile           from "./pages/Profile";
 
 import { AuthProvider, AuthContext } from "./AuthContext";
 
+/* ── Redirects to /login if not logged in ── */
 function PrivateRoute({ element }) {
   const { loggedIn } = useContext(AuthContext);
   return loggedIn ? element : <Navigate to="/login" replace />;
 }
 
+/* ── App shell — hides Navbar/Footer on auth pages ── */
 function Layout() {
   const location = useLocation();
 
@@ -44,21 +48,32 @@ function Layout() {
       {!hideLayout && <Navbar />}
 
       <Routes>
-        <Route path="/" element={<Home />} />
+        {/* ── Public routes ── */}
+        <Route path="/"              element={<Home />} />
+        <Route path="/signup"        element={<SignUp />} />
+        <Route path="/login"         element={<Login />} />
+        <Route path="/recipeSearch"  element={<RecipeSearch />} />
+        <Route path="/nutriAnalysis" element={<NutritionAnalysis />} />
+        <Route path="/nourish"       element={<NourishInitiative />} />
+        <Route path="/ecopro"        element={<ECOProgress />} />
+        <Route path="/display"       element={<Display newWaste={wasteData} />} />
+
+        {/* ── Private routes (login required) ── */}
         <Route
           path="/inventory"
           element={<PrivateRoute element={<Inventory />} />}
         />
-        <Route path="/signup" element={<SignUp />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/recipeSearch" element={<RecipeSearch />} />
         <Route
           path="/wasteAnalysis"
           element={<PrivateRoute element={<Waste onNewWaste={addNewWaste} />} />}
         />
-        <Route path="/nutriAnalysis" element={<NutritionAnalysis />} />
-        <Route path="/ecopro" element={<ECOProgress />} />
-        <Route path="/display" element={<Display newWaste={wasteData} />} />
+        <Route
+          path="/profile"
+          element={<PrivateRoute element={<Profile />} />}
+        />
+
+        {/* ── 404 → redirect home ── */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
       {!hideLayout && <Footer />}

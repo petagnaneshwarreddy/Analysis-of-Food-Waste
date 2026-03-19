@@ -1,491 +1,620 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { Button } from "@mui/material";
 import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../AuthContext";
 
-const API_BASE = "https://backend-food-fb9g.onrender.com";
+const API_BASE = process.env.REACT_APP_API_URL;
 
-const styles = `
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+const css = `
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Outfit:wght@300;400;500;600;700&display=swap');
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  .login-body {
+  .lg-root {
     min-height: 100vh;
-    background: #09090f;
-    font-family: 'DM Sans', sans-serif;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    font-family: 'Outfit', sans-serif;
     color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background: #0a0a0a;
+  }
+
+  /* ══════════════════════════════
+     LEFT — BRAND PANEL
+  ══════════════════════════════ */
+  .lg-left {
+    background: #0d0d0d;
     position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 44px 52px 48px;
+    min-height: 100vh;
     overflow: hidden;
-    padding: 24px;
+    border-right: 1px solid rgba(255,255,255,0.05);
   }
 
-  .login-body::before {
+  /* warm orange glow top-left */
+  .lg-left::before {
     content: '';
-    position: fixed; top: -160px; left: -120px;
-    width: 500px; height: 500px; border-radius: 50%;
-    background: radial-gradient(circle, rgba(255,107,53,0.17) 0%, transparent 70%);
+    position: absolute;
+    top: -120px; left: -80px;
+    width: 480px; height: 480px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,107,53,0.13) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  /* subtle bottom-right green tint */
+  .lg-left::after {
+    content: '';
+    position: absolute;
+    bottom: -100px; right: -60px;
+    width: 360px; height: 360px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(92,184,92,0.07) 0%, transparent 65%);
     pointer-events: none;
   }
 
-  .login-body::after {
-    content: '';
-    position: fixed; bottom: -150px; right: -100px;
-    width: 440px; height: 440px; border-radius: 50%;
-    background: radial-gradient(circle, rgba(87,183,255,0.12) 0%, transparent 70%);
-    pointer-events: none;
+  /* wordmark */
+  .lg-wordmark {
+    position: relative; z-index: 2;
+    font-family: 'Playfair Display', serif;
+    font-size: 22px; font-weight: 700; letter-spacing: -0.5px;
+    margin-bottom: auto;
   }
+  .lg-wordmark span { color: #ff6b35; font-style: italic; }
 
-  .login-body-container {
-    width: 100%;
+  /* main headline block */
+  .lg-left-content {
+    position: relative; z-index: 2;
+    margin-top: 60px;
+    flex: 1;
     display: flex;
-    align-items: center;
+    flex-direction: column;
     justify-content: center;
-    position: relative;
-    z-index: 1;
   }
 
-  .login-container {
-    width: 100%;
-    max-width: 440px;
-  }
-
-  .form-container {
-    background: rgba(255,255,255,0.025);
-    border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 28px;
-    padding: 48px 44px 42px;
-    backdrop-filter: blur(18px);
-    animation: fadeUp 0.35s ease;
-  }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  .lg-brand {
-    text-align: center;
-    margin-bottom: 32px;
-  }
-
+  /* badge pill */
   .lg-badge {
-    display: inline-flex; align-items: center; gap: 7px;
-    font-family: 'Syne', sans-serif;
-    font-size: 10.5px; font-weight: 700;
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 10px; font-weight: 700;
     letter-spacing: 3px; text-transform: uppercase;
-    color: #ff6b35;
-    border: 1px solid rgba(255,107,53,0.35);
-    border-radius: 100px; padding: 5px 16px;
-    background: rgba(255,107,53,0.07);
-    margin-bottom: 18px;
+    color: rgba(255,255,255,0.45);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 100px; padding: 6px 16px;
+    margin-bottom: 28px;
+    width: fit-content;
   }
-
   .lg-badge-dot {
     width: 6px; height: 6px; border-radius: 50%;
     background: #ff6b35;
-    animation: pulse 1.8s ease-in-out infinite;
+    box-shadow: 0 0 8px rgba(255,107,53,0.6);
+    animation: bdot 2s ease-in-out infinite;
   }
+  @keyframes bdot { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50%       { opacity: 0.4; transform: scale(0.7); }
+  /* big headline */
+  .lg-h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(42px, 5vw, 64px);
+    font-weight: 900; line-height: 1.04;
+    letter-spacing: -2.5px; margin-bottom: 22px;
   }
-
-  h1.opacity {
-    font-family: 'Syne', sans-serif;
-    font-size: 30px; font-weight: 800;
-    letter-spacing: -1px; line-height: 1.1;
-    color: #fff; margin-bottom: 6px;
-  }
-
-  h1.opacity .accent {
-    background: linear-gradient(120deg, #ff6b35 30%, #ffb088);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .lg-subtitle {
-    font-size: 14px; font-weight: 300;
-    color: rgba(255,255,255,0.38);
-    margin-top: 4px;
-  }
-
-  .form-container h2 {
-    font-family: 'Syne', sans-serif;
-    font-size: 18px; font-weight: 700;
-    margin-bottom: 20px; color: #fff;
-    text-align: center;
-  }
-
-  .form-container input[type="email"],
-  .form-container input[type="password"] {
-    width: 100%;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.09);
-    border-radius: 11px; padding: 13px 16px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14.5px; color: #fff; outline: none;
-    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
-    margin-bottom: 14px;
+  .lg-h1-orange {
+    color: #ff6b35;
+    font-style: italic;
     display: block;
   }
 
-  .form-container input::placeholder {
-    color: rgba(255,255,255,0.22);
-    font-size: 11.5px; letter-spacing: 1.2px;
+  /* description */
+  .lg-desc {
+    font-size: 15px; font-weight: 300;
+    color: rgba(255,255,255,0.38);
+    line-height: 1.75; max-width: 380px;
   }
 
-  .form-container input:focus {
-    border-color: rgba(255,107,53,0.55);
-    background: rgba(255,107,53,0.05);
-    box-shadow: 0 0 0 3px rgba(255,107,53,0.1);
+  /* stats 2×2 grid */
+  .lg-stats {
+    position: relative; z-index: 2;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 52px;
+  }
+  .lg-stat-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px;
+    padding: 20px 22px;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .lg-stat-card:hover {
+    background: rgba(255,107,53,0.06);
+    border-color: rgba(255,107,53,0.18);
+  }
+  .lg-stat-val {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(28px, 3.5vw, 36px);
+    font-weight: 900; line-height: 1;
+    color: #ff6b35; letter-spacing: -1px;
+  }
+  .lg-stat-lbl {
+    font-size: 11px; font-weight: 400;
+    color: rgba(255,255,255,0.28);
+    margin-top: 6px; letter-spacing: 0.3px;
   }
 
-  .login-button.MuiButton-root {
-    background: linear-gradient(135deg, #ff6b35, #e84e1b) !important;
-    color: #fff !important;
-    font-family: 'Syne', sans-serif !important;
-    font-size: 14px !important; font-weight: 700 !important;
-    letter-spacing: 1px !important;
-    border-radius: 11px !important;
-    padding: 14px !important;
-    box-shadow: 0 6px 26px rgba(255,107,53,0.38) !important;
-    text-transform: uppercase !important;
-    transition: transform 0.15s, box-shadow 0.15s !important;
-    margin-top: 6px !important;
+  /* ══════════════════════════════
+     RIGHT — FORM PANEL
+  ══════════════════════════════ */
+  .lg-right {
+    background: #111411;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 52px 64px;
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+  .lg-right::before {
+    content: '';
+    position: absolute; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(circle at 90% 10%, rgba(255,107,53,0.05) 0%, transparent 45%),
+      radial-gradient(circle at 10% 90%, rgba(92,184,92,0.04) 0%, transparent 45%);
   }
 
-  .login-button.MuiButton-root:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 10px 34px rgba(255,107,53,0.48) !important;
+  .lg-form-wrap {
+    width: 100%; max-width: 400px;
+    position: relative; z-index: 2;
   }
 
-  .forgot-password-button.MuiButton-root {
-    background: transparent !important;
-    border: 1px solid rgba(255,255,255,0.09) !important;
-    color: rgba(255,255,255,0.4) !important;
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 13px !important;
-    border-radius: 11px !important;
-    padding: 12px !important;
-    margin-top: 10px !important;
-    text-transform: none !important;
-    box-shadow: none !important;
-    transition: border-color 0.2s, color 0.2s, background 0.2s !important;
+  /* form heading */
+  .lg-form-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(32px, 3.5vw, 44px);
+    font-weight: 900; letter-spacing: -1.5px;
+    line-height: 1.1; margin-bottom: 8px;
+  }
+  .lg-form-title span {
+    color: #ff6b35; font-style: italic;
+  }
+  .lg-form-sub {
+    font-size: 14px; font-weight: 300;
+    color: rgba(255,255,255,0.32);
+    margin-bottom: 36px; line-height: 1.6;
   }
 
-  .forgot-password-button.MuiButton-root:hover {
-    border-color: rgba(255,107,53,0.4) !important;
-    color: #ff6b35 !important;
-    background: rgba(255,107,53,0.05) !important;
+  /* field */
+  .lg-field { margin-bottom: 16px; }
+  .lg-field-label {
+    display: block;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase;
+    color: rgba(255,255,255,0.25); margin-bottom: 8px;
+  }
+  .lg-inp {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 10px;
+    padding: 15px 18px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px; color: #fff; outline: none;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  }
+  .lg-inp::placeholder { color: rgba(255,255,255,0.16); }
+  .lg-inp:focus {
+    border-color: rgba(255,107,53,0.50);
+    background: rgba(255,107,53,0.04);
+    box-shadow: 0 0 0 3px rgba(255,107,53,0.08);
   }
 
-  .reset-password-button.MuiButton-root {
-    background: linear-gradient(135deg, #ff6b35, #e84e1b) !important;
-    color: #fff !important;
-    font-family: 'Syne', sans-serif !important;
-    font-size: 14px !important; font-weight: 700 !important;
-    border-radius: 11px !important;
-    padding: 14px !important;
-    box-shadow: 0 6px 26px rgba(255,107,53,0.38) !important;
-    text-transform: uppercase !important;
-    letter-spacing: 1px !important;
-    transition: transform 0.15s, box-shadow 0.15s !important;
+  /* LOGIN button — matches screenshot exactly */
+  .lg-btn-login {
+    width: 100%; padding: 16px;
+    margin-top: 8px;
+    border-radius: 10px; border: none;
+    background: #ff6b35;
+    color: #fff;
+    font-family: 'Outfit', sans-serif;
+    font-size: 15px; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 9px;
+    box-shadow: 0 6px 28px rgba(255,107,53,0.38);
+    transition: background 0.2s, transform 0.15s, box-shadow 0.15s, opacity 0.2s;
   }
-
-  .reset-password-button.MuiButton-root:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 10px 34px rgba(255,107,53,0.48) !important;
+  .lg-btn-login:hover:not(:disabled) {
+    background: #ff7d4d;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 36px rgba(255,107,53,0.48);
   }
+  .lg-btn-login:active:not(:disabled) { transform: translateY(0); opacity: 0.88; }
+  .lg-btn-login:disabled { opacity: 0.36; cursor: not-allowed; transform: none; }
 
-  .cancel-button.MuiButton-root {
-    background: transparent !important;
-    border: 1px solid rgba(255,255,255,0.09) !important;
-    color: rgba(255,255,255,0.4) !important;
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 13px !important;
-    border-radius: 11px !important;
-    padding: 12px !important;
-    margin-top: 10px !important;
-    text-transform: none !important;
-    box-shadow: none !important;
-    transition: border-color 0.2s, color 0.2s !important;
+  /* forgot password */
+  .lg-forgot {
+    display: block; width: 100%; margin-top: 14px;
+    text-align: center;
+    font-size: 13.5px; font-weight: 400;
+    color: rgba(255,255,255,0.30);
+    background: none; border: none; cursor: pointer;
+    transition: color 0.18s;
+    font-family: 'Outfit', sans-serif;
   }
+  .lg-forgot:hover { color: rgba(255,255,255,0.60); }
 
-  .cancel-button.MuiButton-root:hover {
-    border-color: rgba(255,107,53,0.4) !important;
-    color: #ff6b35 !important;
-    background: rgba(255,107,53,0.05) !important;
-  }
-
+  /* OR divider */
   .lg-divider {
-    display: flex; align-items: center; gap: 12px;
-    margin: 18px 0 14px;
+    display: flex; align-items: center; gap: 14px;
+    margin: 22px 0 18px;
   }
+  .lg-div-line { flex: 1; height: 1px; background: rgba(255,255,255,0.07); }
+  .lg-div-txt { font-size: 11px; color: rgba(255,255,255,0.18); letter-spacing: 2px; }
 
-  .lg-divider-line {
-    flex: 1; height: 1px;
-    background: rgba(255,255,255,0.07);
+  /* signup row */
+  .lg-signup-row {
+    text-align: center; font-size: 14px;
+    color: rgba(255,255,255,0.26);
   }
-
-  .lg-divider span {
-    font-size: 11px; color: rgba(255,255,255,0.2);
-    letter-spacing: 1px;
+  .lg-signup-row a {
+    color: #ff6b35; text-decoration: none; font-weight: 600;
+    transition: color 0.15s;
   }
+  .lg-signup-row a:hover { color: #ff8c5a; text-decoration: underline; }
 
-  .signup-link {
-    text-align: center;
-    font-size: 13.5px; color: rgba(255,255,255,0.3);
-    margin-top: 4px;
+  /* ghost button (reset / back) */
+  .lg-btn-ghost {
+    width: 100%; padding: 14px 16px; margin-top: 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.09);
+    background: transparent; color: rgba(255,255,255,0.30);
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    transition: border-color 0.2s, color 0.2s, background 0.2s;
   }
+  .lg-btn-ghost:hover { border-color: rgba(255,107,53,0.35); color: #ff8c5a; background: rgba(255,107,53,0.05); }
 
-  .signup-link a {
-    color: #ff6b35; text-decoration: none; font-weight: 500;
+  /* spinner */
+  .lg-spin {
+    width: 15px; height: 15px; flex-shrink: 0;
+    border: 2px solid rgba(255,255,255,0.25);
+    border-top-color: #fff; border-radius: 50%;
+    animation: spin 0.6s linear infinite;
   }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
-  .signup-link a:hover { text-decoration: underline; }
-
-  .message {
-    margin-top: 18px;
-    padding: 12px 20px;
-    border-radius: 100px;
-    font-size: 13.5px; font-weight: 500;
-    text-align: center;
+  /* messages */
+  .lg-msg {
+    margin-top: 14px; padding: 12px 18px; border-radius: 100px;
+    font-size: 13px; font-weight: 500; text-align: center;
     display: flex; align-items: center; justify-content: center; gap: 8px;
   }
+  .lg-msg.ok  { background: rgba(92,184,92,0.09);  border: 1px solid rgba(92,184,92,0.25);  color: #6ed46e; }
+  .lg-msg.err { background: rgba(255,90,90,0.08);  border: 1px solid rgba(255,90,90,0.24);  color: #ff7a7a; }
 
-  .message.success {
-    background: rgba(20,200,120,0.12);
-    border: 1px solid rgba(20,200,120,0.35);
-    color: #14c878;
+  /* countdown */
+  .lg-cd { text-align: center; font-size: 12px; color: rgba(255,255,255,0.22); margin-top: 10px; }
+  .lg-cd b { color: #ff6b35; }
+
+  /* wake bar */
+  .lg-wake {
+    margin-top: 14px;
+    background: rgba(255,107,53,0.05);
+    border: 1px solid rgba(255,107,53,0.15);
+    border-radius: 12px; padding: 14px 16px;
   }
+  .lg-wake-title { font-size: 12px; font-weight: 600; color: #ff8c5a; display:flex; align-items:center; gap:7px; margin-bottom:9px; }
+  .lg-wake-track { height: 3px; background: rgba(255,107,53,0.10); border-radius:3px; overflow:hidden; }
+  .lg-wake-fill  { height:100%; background: linear-gradient(90deg,#ff6b35,#ffb088); border-radius:3px; transition:width 1s linear; }
+  .lg-wake-hint  { font-size:10px; color: rgba(255,255,255,0.18); margin-top:7px; }
 
-  .message.error {
-    background: rgba(255,70,70,0.1);
-    border: 1px solid rgba(255,70,70,0.32);
-    color: #ff6b6b;
+  /* reset title */
+  .lg-reset-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px; font-weight: 700; letter-spacing: -1px;
+    margin-bottom: 6px;
   }
+  .lg-reset-title i { color: #ff6b35; font-style: italic; }
 
-  .countdown-timer {
-    text-align: center;
-    font-size: 12px; color: rgba(255,255,255,0.28);
-    margin-top: 12px;
+  /* ══════════════════════════════
+     RESPONSIVE
+  ══════════════════════════════ */
+  @media (max-width: 860px) {
+    .lg-root { grid-template-columns: 1fr; }
+    .lg-left { padding: 36px 28px 32px; min-height: auto; }
+    .lg-right { padding: 40px 28px; min-height: auto; }
+    .lg-h1 { font-size: 36px; }
+    .lg-left-content { margin-top: 32px; }
+    .lg-stats { margin-top: 36px; }
   }
-
-  .countdown-timer span {
-    color: #ff6b35; font-weight: 600;
-  }
-
   @media (max-width: 480px) {
-    .form-container { padding: 32px 20px 28px; }
-    h1.opacity { font-size: 24px; }
+    .lg-left  { padding: 28px 20px 24px; }
+    .lg-right { padding: 32px 20px; }
+    .lg-stats { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .lg-form-title { font-size: 28px; }
   }
 `;
 
+/* ── WakeBar ── */
+const WakeBar = ({ totalSeconds }) => {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const iv = setInterval(() => {
+      setElapsed(s => {
+        if (s >= totalSeconds) { clearInterval(iv); return totalSeconds; }
+        return s + 1;
+      });
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [totalSeconds]);
+  const pct = Math.min((elapsed / totalSeconds) * 100, 92);
+  return (
+    <div className="lg-wake">
+      <div className="lg-wake-title">⏳ Waking up server…</div>
+      <div className="lg-wake-track">
+        <div className="lg-wake-fill" style={{ width: `${pct}%` }} />
+      </div>
+      <div className="lg-wake-hint">Render free tier takes ~30s to wake. Retrying automatically…</div>
+    </div>
+  );
+};
+
+const STATS = [
+  { val: "12K+", lbl: "Meals Saved"   },
+  { val: "3.4T", lbl: "CO₂ Reduced"  },
+  { val: "840+", lbl: "Donors"        },
+  { val: "99%",  lbl: "Satisfaction"  },
+];
+
+/* ══════════════════════════════════════════
+   LOGIN
+══════════════════════════════════════════ */
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loginMessage, setLoginMessage] = useState("");
-  const [countdown, setCountdown] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [resetEmail, setResetEmail] = useState("");
+  const [email,               setEmail]               = useState("");
+  const [password,            setPassword]            = useState("");
+  const [loginMessage,        setLoginMessage]        = useState("");
+  const [messageType,         setMessageType]         = useState("error");
+  const [countdown,           setCountdown]           = useState(null);
+  const [loading,             setLoading]             = useState(false);
+  const [waking,              setWaking]              = useState(false);
+  const [resetEmail,          setResetEmail]          = useState("");
   const [isResettingPassword, setIsResettingPassword] = useState(false);
 
+  const retryRef    = useRef(0);
+  const retryTimer  = useRef(null);
+  const emailRef    = useRef(email);
+  const passwordRef = useRef(password);
+
+  useEffect(() => { emailRef.current    = email;    }, [email]);
+  useEffect(() => { passwordRef.current = password; }, [password]);
+  useEffect(() => () => { if (retryTimer.current) clearTimeout(retryTimer.current); }, []);
+
   const navigate = useNavigate();
-  const { handleLoginSuccess } = useContext(AuthContext);
+  const auth     = useContext(AuthContext);
+
+  const callLogin = (token) => {
+    if (auth.login) auth.login(token);
+    else if (auth.handleLoginSuccess) {
+      localStorage.setItem("token", token);
+      auth.handleLoginSuccess();
+    }
+  };
 
   useEffect(() => {
     if (countdown === null) return;
-    if (countdown <= 0) {
-      navigate("/");
-      return;
-    }
-    const timer = setTimeout(() => {
-      setCountdown((prev) => prev - 1);
-    }, 1000);
-    return () => clearTimeout(timer);
+    if (countdown <= 0) { navigate("/"); return; }
+    const t = setTimeout(() => setCountdown(p => p - 1), 1000);
+    return () => clearTimeout(t);
   }, [countdown, navigate]);
 
-  // ✅ FIX: Updated route from /login → /api/login
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoginMessage("");
-    setLoading(true);
-
+  const attemptLogin = async (emailVal, passVal) => {
     try {
-      const response = await axios.post(`${API_BASE}/api/login`, {
-        email,
-        password,
-      });
-
-      const token = response.data.token;
-      localStorage.setItem("token", token);
-
-      handleLoginSuccess();
-      setLoginMessage("Login Successfully");
-      setCountdown(5);
-    } catch (error) {
-      setLoginMessage(
-        error?.response?.data?.error || "Invalid email or password"
+      const res = await axios.post(
+        `${API_BASE}/api/login`,
+        { email: emailVal, password: passVal },
+        { timeout: 35000 }
       );
-    } finally {
-      setLoading(false);
+      retryRef.current = 0;
+      setWaking(false); setLoading(false);
+      callLogin(res.data.token);
+      setMessageType("success");
+      setLoginMessage("Login successful! Redirecting…");
+      setCountdown(3);
+    } catch (err) {
+      const status       = err?.response?.status;
+      const isNetworkErr = !status || err.code === "ECONNABORTED" || err.code === "ERR_NETWORK";
+      if (isNetworkErr && retryRef.current < 3) {
+        retryRef.current += 1;
+        setWaking(true); setLoading(false);
+        retryTimer.current = setTimeout(() => {
+          attemptLogin(emailRef.current, passwordRef.current);
+        }, 10000);
+      } else {
+        retryRef.current = 0;
+        setWaking(false); setLoading(false);
+        setMessageType("error");
+        if (isNetworkErr)                        setLoginMessage("Server unavailable. Please try again.");
+        else if (status === 400 || status === 401) setLoginMessage("Invalid email or password.");
+        else if (status === 429)                 setLoginMessage("Too many requests — wait a moment.");
+        else setLoginMessage(err?.response?.data?.error || "Login failed. Try again.");
+      }
     }
   };
 
-  // ✅ FIX: Updated route from /forgot-password → /api/forgot-password
+  const cancelRetry = () => {
+    if (retryTimer.current) { clearTimeout(retryTimer.current); retryTimer.current = null; }
+    retryRef.current = 0; setWaking(false); setLoading(false);
+  };
+
+  const handleLogin          = async (e) => { e.preventDefault(); cancelRetry(); setLoginMessage(""); setLoading(true); localStorage.removeItem("token"); await attemptLogin(email, password); };
+  const handleEmailChange    = (e) => { cancelRetry(); setLoginMessage(""); setEmail(e.target.value); };
+  const handlePasswordChange = (e) => { cancelRetry(); setLoginMessage(""); setPassword(e.target.value); };
+
   const handleForgotPassword = async (e) => {
     e.preventDefault();
-    if (!resetEmail) {
-      setLoginMessage("Please enter your email.");
-      return;
-    }
+    if (!resetEmail) { setMessageType("error"); setLoginMessage("Please enter your email."); return; }
     try {
-      const response = await axios.post(`${API_BASE}/api/forgot-password`, {
-        email: resetEmail,
-      });
-      setLoginMessage(response.data.message || "Reset email sent!");
+      const res = await axios.post(`${API_BASE}/api/forgot-password`, { email: resetEmail });
+      setMessageType("success");
+      setLoginMessage(res.data.message || "Reset email sent!");
       setIsResettingPassword(false);
-    } catch (error) {
-      setLoginMessage(error?.response?.data?.error || "Something went wrong.");
+    } catch (err) {
+      setMessageType("error");
+      setLoginMessage(err?.response?.data?.error || "Something went wrong.");
     }
   };
+
+  const btnLabel = waking ? "Retrying…" : loading ? "Signing In…" : "LOG IN";
 
   return (
     <>
-      <style>{styles}</style>
+      <style>{css}</style>
+      <div className="lg-root">
 
-      <div className="login-body">
-        <section className="login-body-container">
-          <div className="login-container">
-            <div className="form-container">
+        {/* ════ LEFT PANEL ════ */}
+        <div className="lg-left">
 
-              <div className="lg-brand">
-                <div className="lg-badge">
-                  <span className="lg-badge-dot" />
-                  fEEDfORWARD
-                </div>
-                <h1 className="opacity">
-                  {isResettingPassword
-                    ? <>Reset your <span className="accent">password</span></>
-                    : <>Welcome <span className="accent">back</span></>}
-                </h1>
-                <p className="lg-subtitle">
-                  {isResettingPassword
-                    ? "We'll send a reset link to your inbox."
-                    : "Sign in to continue making a difference."}
-                </p>
+          {/* Wordmark */}
+          <div className="lg-wordmark">
+            Feed<span>Forward</span>
+          </div>
+
+          {/* Headline + desc */}
+          <div className="lg-left-content">
+            <div className="lg-badge">
+              <span className="lg-badge-dot" />
+              Making a difference
+            </div>
+
+            <h1 className="lg-h1">
+              Reduce waste.<br />
+              <span className="lg-h1-orange">Feed lives.</span>
+            </h1>
+
+            <p className="lg-desc">
+              Track your food waste, donate surplus meals,<br />
+              and help families in need — all in one place.
+            </p>
+          </div>
+
+          {/* Stats 2×2 */}
+          <div className="lg-stats">
+            {STATS.map(s => (
+              <div className="lg-stat-card" key={s.lbl}>
+                <div className="lg-stat-val">{s.val}</div>
+                <div className="lg-stat-lbl">{s.lbl}</div>
               </div>
+            ))}
+          </div>
 
-              {!isResettingPassword ? (
+        </div>
+
+        {/* ════ RIGHT PANEL ════ */}
+        <div className="lg-right">
+          <div className="lg-form-wrap">
+
+            {!isResettingPassword ? (
+              <>
+                <h2 className="lg-form-title">
+                  Welcome <span>back</span>
+                </h2>
+                <p className="lg-form-sub">
+                  Sign in to continue making a difference.
+                </p>
+
                 <form onSubmit={handleLogin}>
-                  <input
-                    type="email"
-                    placeholder="EMAIL"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-
-                  <input
-                    type="password"
-                    placeholder="PASSWORD"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-
-                  <Button
-                    className="login-button"
-                    type="submit"
-                    variant="contained"
-                    fullWidth
-                    disabled={loading}
-                  >
-                    {loading ? "Signing In..." : "LOG IN"}
-                  </Button>
-
-                  <Button
-                    className="forgot-password-button"
-                    onClick={() => {
-                      setIsResettingPassword(true);
-                      setLoginMessage("");
-                    }}
-                    fullWidth
-                  >
-                    Forgot Password?
-                  </Button>
-
-                  <div className="lg-divider">
-                    <div className="lg-divider-line" />
-                    <span>OR</span>
-                    <div className="lg-divider-line" />
+                  <div className="lg-field">
+                    <label className="lg-field-label">Email</label>
+                    <input
+                      className="lg-inp" type="email"
+                      placeholder="you@example.com"
+                      value={email} onChange={handleEmailChange}
+                      required autoComplete="email"
+                    />
                   </div>
 
-                  <p className="signup-link">
-                    Don't have an account?{" "}
-                    <Link to="/signup">Sign Up</Link>
-                  </p>
+                  <div className="lg-field">
+                    <label className="lg-field-label">Password</label>
+                    <input
+                      className="lg-inp" type="password"
+                      placeholder="••••••••••"
+                      value={password} onChange={handlePasswordChange}
+                      required autoComplete="current-password"
+                    />
+                  </div>
+
+                  <button type="submit" className="lg-btn-login" disabled={loading || waking}>
+                    {(loading || waking) && <span className="lg-spin" />}
+                    {btnLabel}
+                  </button>
                 </form>
-              ) : (
-                <form onSubmit={handleForgotPassword}>
-                  <h2>Reset Your Password</h2>
 
-                  <input
-                    type="email"
-                    placeholder="Enter your email"
-                    value={resetEmail}
-                    onChange={(e) => setResetEmail(e.target.value)}
-                    required
-                  />
-
-                  <Button
-                    className="reset-password-button"
-                    type="submit"
-                    variant="contained"
-                    fullWidth
-                  >
-                    Send Reset Email
-                  </Button>
-
-                  <Button
-                    className="cancel-button"
-                    onClick={() => {
-                      setIsResettingPassword(false);
-                      setLoginMessage("");
-                    }}
-                    fullWidth
-                  >
-                    ← Back to Login
-                  </Button>
-                </form>
-              )}
-
-              {loginMessage && (
-                <p
-                  className={`message ${
-                    loginMessage === "Login Successfully" ? "success" : "error"
-                  }`}
+                <button
+                  className="lg-forgot"
+                  onClick={() => { setIsResettingPassword(true); setLoginMessage(""); }}
+                  disabled={loading || waking}
                 >
-                  {loginMessage === "Login Successfully" ? "✓" : "✕"}{" "}
-                  {loginMessage}
-                </p>
-              )}
+                  Forgot Password?
+                </button>
 
-              {countdown !== null && countdown > 0 && (
-                <p className="countdown-timer">
-                  Redirecting in <span>{countdown}</span> seconds...
-                </p>
-              )}
+                <div className="lg-divider">
+                  <div className="lg-div-line" />
+                  <span className="lg-div-txt">OR</span>
+                  <div className="lg-div-line" />
+                </div>
 
-            </div>
+                <p className="lg-signup-row">
+                  Don't have an account?&nbsp;<Link to="/signup">Sign Up</Link>
+                </p>
+              </>
+            ) : (
+              <>
+                <h2 className="lg-reset-title">
+                  Reset your <i>password</i>
+                </h2>
+                <p className="lg-form-sub" style={{ marginBottom: 28 }}>
+                  We'll send a reset link to your inbox.
+                </p>
+
+                <form onSubmit={handleForgotPassword}>
+                  <div className="lg-field">
+                    <label className="lg-field-label">Email Address</label>
+                    <input
+                      className="lg-inp" type="email"
+                      placeholder="you@example.com"
+                      value={resetEmail}
+                      onChange={e => setResetEmail(e.target.value)}
+                      required autoComplete="email"
+                    />
+                  </div>
+                  <button type="submit" className="lg-btn-login">
+                    Send Reset Email
+                  </button>
+                  <button
+                    type="button" className="lg-btn-ghost"
+                    onClick={() => { setIsResettingPassword(false); setLoginMessage(""); }}
+                  >
+                    ← Back to Sign In
+                  </button>
+                </form>
+              </>
+            )}
+
+            {waking && <WakeBar totalSeconds={30} />}
+
+            {loginMessage && !waking && (
+              <p className={`lg-msg ${messageType === "success" ? "ok" : "err"}`}>
+                {messageType === "success" ? "✓" : "✕"} {loginMessage}
+              </p>
+            )}
+
+            {countdown !== null && countdown > 0 && (
+              <p className="lg-cd">Redirecting in <b>{countdown}</b> seconds…</p>
+            )}
+
           </div>
-        </section>
+        </div>
+
       </div>
     </>
   );
