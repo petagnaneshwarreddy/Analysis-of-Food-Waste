@@ -49,7 +49,7 @@ const css = `
   }
 
   /* ─────────────────────────────
-     COVER — full-width cinematic top
+     COVER
   ───────────────────────────────*/
   .p-cover {
     position: relative;
@@ -57,7 +57,6 @@ const css = `
     background: var(--ink2);
     overflow: hidden;
   }
-  /* animated mesh gradient */
   .p-cover-mesh {
     position: absolute; inset: 0;
     background:
@@ -70,15 +69,11 @@ const css = `
     from { transform: scale(1) translateX(0); }
     to   { transform: scale(1.06) translateX(12px); }
   }
-  /* scan line texture */
   .p-cover-lines {
     position: absolute; inset: 0;
     background-image: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 3px,
-      rgba(0,0,0,0.08) 3px,
-      rgba(0,0,0,0.08) 4px
+      0deg, transparent, transparent 3px,
+      rgba(0,0,0,0.08) 3px, rgba(0,0,0,0.08) 4px
     );
     pointer-events: none;
   }
@@ -88,7 +83,7 @@ const css = `
   }
 
   /* ─────────────────────────────
-     IDENTITY — avatar row, overlaps cover
+     IDENTITY
   ───────────────────────────────*/
   .p-identity {
     max-width: 1040px; margin: 0 auto;
@@ -102,10 +97,7 @@ const css = `
     gap: 24px; flex-wrap: wrap;
   }
 
-  /* avatar */
-  .p-avatar-shell {
-    position: relative; flex-shrink: 0;
-  }
+  .p-avatar-shell { position: relative; flex-shrink: 0; }
   .p-avatar {
     width: 120px; height: 120px; border-radius: 28px;
     background: linear-gradient(145deg, #2aad52, #1a7a38);
@@ -144,7 +136,6 @@ const css = `
     box-shadow: 0 0 10px rgba(62,207,110,0.6);
   }
 
-  /* name block */
   .p-name-block { flex: 1; min-width: 200px; padding-bottom: 8px; }
   .p-name-pre {
     font-family: var(--mono); font-size: 10px; font-weight: 500;
@@ -169,7 +160,6 @@ const css = `
     color: var(--txt3); letter-spacing: 0.3px;
   }
 
-  /* action row */
   .p-action-row {
     padding-bottom: 8px; display: flex; gap: 10px; align-items: flex-end; flex-shrink: 0;
   }
@@ -192,33 +182,36 @@ const css = `
   }
   .p-uid:hover::before { transform: translateX(100%); }
   .p-uid:hover { background: var(--jade2); border-color: rgba(62,207,110,0.40); }
-  .p-uid-label {
-    font-size: 8px; font-weight: 700; letter-spacing: 2.5px;
-    text-transform: uppercase; color: var(--txt3);
-  }
+  .p-uid-label { font-size: 8px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; color: var(--txt3); }
   .p-uid-copy { font-size: 12px; opacity: 0.4; }
 
-  /* logout */
+  /* ── SIGN OUT BUTTON (prominent, in profile) ── */
   .p-logout {
-    display: inline-flex; align-items: center; gap: 7px;
-    padding: 9px 18px; border-radius: 10px;
-    background: var(--coral2); border: 1px solid rgba(255,107,107,0.20);
+    display: inline-flex; align-items: center; gap: 9px;
+    padding: 10px 22px; border-radius: 12px;
+    background: rgba(255,107,107,0.09);
+    border: 1px solid rgba(255,107,107,0.25);
     color: var(--coral); font-family: var(--sans);
-    font-size: 12px; font-weight: 700; letter-spacing: 0.5px;
+    font-size: 13px; font-weight: 700; letter-spacing: 0.4px;
     cursor: pointer; transition: all 0.2s var(--ease);
+    position: relative; overflow: hidden;
   }
+  .p-logout::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(255,107,107,0.0), rgba(255,107,107,0.10));
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .p-logout:hover::before { opacity: 1; }
   .p-logout:hover {
-    background: rgba(255,107,107,0.17);
-    border-color: rgba(255,107,107,0.38);
-    transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(255,107,107,0.15);
+    background: rgba(255,107,107,0.16);
+    border-color: rgba(255,107,107,0.45);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(255,107,107,0.18);
   }
+  .p-logout-icon { font-size: 15px; flex-shrink: 0; }
 
   /* tags row */
-  .p-tags {
-    display: flex; gap: 7px; flex-wrap: wrap;
-    margin-top: 14px;
-  }
+  .p-tags { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 14px; }
   .p-tag {
     display: inline-flex; align-items: center; gap: 5px;
     font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 8px;
@@ -229,12 +222,57 @@ const css = `
   .p-tag-l  { background: var(--lilac2); border: 1px solid rgba(185,140,245,0.22); color: var(--lilac); }
   .p-tag-d  { background: var(--glass);  border: 1px solid var(--rim);  color: var(--txt3); font-size: 10px; }
 
+  /* ── SIGN OUT CARD (bottom of page) ── */
+  .p-signout-card {
+    border-radius: 20px;
+    background: rgba(255,107,107,0.04);
+    border: 1px solid rgba(255,107,107,0.12);
+    padding: 24px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 20px; flex-wrap: wrap;
+    transition: border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
+  }
+  .p-signout-card:hover {
+    border-color: rgba(255,107,107,0.22);
+    box-shadow: 0 8px 32px rgba(255,107,107,0.06);
+  }
+  .p-signout-card-left { display: flex; align-items: center; gap: 14px; }
+  .p-signout-card-ico {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: rgba(255,107,107,0.10); border: 1px solid rgba(255,107,107,0.18);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .p-signout-card-title {
+    font-family: var(--sans); font-size: 15px; font-weight: 700;
+    color: var(--txt); margin-bottom: 3px;
+  }
+  .p-signout-card-sub {
+    font-size: 12px; color: var(--txt3); line-height: 1.5;
+  }
+  .p-signout-btn {
+    display: inline-flex; align-items: center; gap: 9px;
+    padding: 13px 28px; border-radius: 12px;
+    background: linear-gradient(135deg, rgba(255,107,107,0.15), rgba(255,107,107,0.08));
+    border: 1px solid rgba(255,107,107,0.30);
+    color: var(--coral); font-family: var(--sans);
+    font-size: 14px; font-weight: 800; letter-spacing: 0.4px;
+    cursor: pointer; transition: all 0.22s var(--ease);
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .p-signout-btn:hover {
+    background: linear-gradient(135deg, rgba(255,107,107,0.26), rgba(255,107,107,0.14));
+    border-color: rgba(255,107,107,0.55);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 32px rgba(255,107,107,0.22);
+    color: #ff8080;
+  }
+  .p-signout-btn:active { transform: translateY(0); }
+
   /* ─────────────────────────────
      DIVIDER
   ───────────────────────────────*/
-  .p-divider {
-    max-width: 1040px; margin: 28px auto 0; padding: 0 28px;
-  }
+  .p-divider { max-width: 1040px; margin: 28px auto 0; padding: 0 28px; }
   .p-divider-line {
     height: 1px;
     background: linear-gradient(90deg, transparent, var(--rim2), var(--rim), transparent);
@@ -272,11 +310,7 @@ const css = `
     top: 0; left: 0; right: 0; height: 1px;
     background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.10) 40%, rgba(255,255,255,0.04) 100%);
   }
-  .p-card:hover {
-    border-color: var(--rim2);
-    box-shadow: 0 12px 48px rgba(0,0,0,0.30);
-  }
-
+  .p-card:hover { border-color: var(--rim2); box-shadow: 0 12px 48px rgba(0,0,0,0.30); }
   .p-card-head {
     padding: 20px 24px 0;
     display: flex; align-items: center; justify-content: space-between;
@@ -287,10 +321,7 @@ const css = `
     display: flex; align-items: center; justify-content: center;
     font-size: 15px; flex-shrink: 0;
   }
-  .p-card-title {
-    font-family: var(--sans); font-size: 13px; font-weight: 700;
-    letter-spacing: 0.2px; color: var(--txt2);
-  }
+  .p-card-title { font-family: var(--sans); font-size: 13px; font-weight: 700; letter-spacing: 0.2px; color: var(--txt2); }
   .p-badge {
     font-family: var(--mono); font-size: 8px; font-weight: 600;
     letter-spacing: 2px; text-transform: uppercase;
@@ -317,17 +348,10 @@ const css = `
     display: flex; align-items: center; justify-content: center;
     font-size: 13px; flex-shrink: 0;
   }
-  .p-row-label {
-    font-size: 10px; font-weight: 700;
-    letter-spacing: 1.5px; text-transform: uppercase;
-    color: var(--txt3);
-  }
+  .p-row-label { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--txt3); }
   .p-row-val {
-    font-family: var(--mono); font-size: 12.5px;
-    font-weight: 500; color: var(--txt);
-    text-align: right; overflow: hidden;
-    text-overflow: ellipsis; white-space: nowrap;
-    max-width: 175px;
+    font-family: var(--mono); font-size: 12.5px; font-weight: 500; color: var(--txt);
+    text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 175px;
   }
   .p-row-val.name { font-family: var(--sans); font-size: 14px; font-weight: 700; }
   .p-row-val.muted { color: var(--txt3); font-style: italic; font-family: var(--sans); font-size: 12px; }
@@ -340,9 +364,7 @@ const css = `
   /* ─────────────────────────────
      STAT TILES
   ───────────────────────────────*/
-  .p-tiles {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-  }
+  .p-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .p-tile {
     border-radius: 14px; padding: 18px 16px 16px;
     position: relative; overflow: hidden;
@@ -356,41 +378,23 @@ const css = `
     filter: blur(28px); opacity: 0.5; pointer-events: none;
   }
   .p-tile-emoji { font-size: 20px; margin-bottom: 10px; position: relative; }
-  .p-tile-val {
-    font-family: var(--serif);
-    font-size: 32px; font-weight: 400;
-    line-height: 1; letter-spacing: -1px;
-    position: relative;
-  }
-  .p-tile-label {
-    font-size: 9px; font-weight: 700;
-    letter-spacing: 2px; text-transform: uppercase;
-    color: rgba(223,238,224,0.30);
-    margin-top: 7px; position: relative;
-  }
+  .p-tile-val { font-family: var(--serif); font-size: 32px; font-weight: 400; line-height: 1; letter-spacing: -1px; position: relative; }
+  .p-tile-label { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: rgba(223,238,224,0.30); margin-top: 7px; position: relative; }
 
-  /* approval bar */
   .p-bar-wrap { margin-top: 18px; }
   .p-bar-head {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 8px;
-    font-family: var(--mono); font-size: 10px;
-    letter-spacing: 1.5px; text-transform: uppercase; color: var(--txt3);
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+    font-family: var(--mono); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--txt3);
   }
   .p-bar-head span:last-child { color: var(--jade); font-weight: 600; }
-  .p-bar-track {
-    height: 5px; border-radius: 99px;
-    background: rgba(255,255,255,0.06); overflow: hidden;
-  }
+  .p-bar-track { height: 5px; border-radius: 99px; background: rgba(255,255,255,0.06); overflow: hidden; }
   .p-bar-fill {
     height: 100%; border-radius: 99px;
     background: linear-gradient(90deg, #2aad52, #3ecf6e);
-    transition: width 1s var(--ease);
-    position: relative;
+    transition: width 1s var(--ease); position: relative;
   }
   .p-bar-fill::after {
-    content: '';
-    position: absolute; top: 0; right: 0; bottom: 0; width: 30px;
+    content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 30px;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25));
   }
 
@@ -403,33 +407,26 @@ const css = `
     background: var(--lilac2); border: 1px dashed rgba(185,140,245,0.30);
     color: var(--lilac); font-family: var(--sans);
     font-size: 13px; font-weight: 700;
-    cursor: pointer; transition: all 0.2s var(--ease);
-    letter-spacing: 0.3px;
+    cursor: pointer; transition: all 0.2s var(--ease); letter-spacing: 0.3px;
   }
   .p-edit-cta:hover {
-    background: rgba(185,140,245,0.16);
-    border-color: rgba(185,140,245,0.50);
-    transform: translateY(-1px);
-    box-shadow: 0 6px 24px rgba(185,140,245,0.12);
+    background: rgba(185,140,245,0.16); border-color: rgba(185,140,245,0.50);
+    transform: translateY(-1px); box-shadow: 0 6px 24px rgba(185,140,245,0.12);
   }
   .p-edit-cta-icon { font-size: 16px; }
 
-  /* form grid */
-  .p-form-grid {
-    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px 22px;
-  }
+  .p-form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px 22px; }
   @media (max-width: 700px) { .p-form-grid { grid-template-columns: 1fr 1fr; } }
   @media (max-width: 480px) { .p-form-grid { grid-template-columns: 1fr; } }
 
   .p-field { display: flex; flex-direction: column; gap: 8px; }
   .p-field-label {
     font-family: var(--mono); font-size: 9px; font-weight: 600;
-    letter-spacing: 2.5px; text-transform: uppercase;
-    color: var(--txt3); display: flex; align-items: center; gap: 6px;
+    letter-spacing: 2.5px; text-transform: uppercase; color: var(--txt3);
+    display: flex; align-items: center; gap: 6px;
   }
   .p-inp {
-    width: 100%;
-    background: rgba(255,255,255,0.035);
+    width: 100%; background: rgba(255,255,255,0.035);
     border: 1px solid rgba(255,255,255,0.08);
     border-radius: 12px; padding: 12px 15px;
     font-family: var(--sans); font-size: 14px; font-weight: 500;
@@ -442,11 +439,8 @@ const css = `
     box-shadow: 0 0 0 3px rgba(62,207,110,0.07);
     background: rgba(62,207,110,0.03);
   }
-  .p-inp:disabled {
-    opacity: 0.22; cursor: not-allowed;
-  }
+  .p-inp:disabled { opacity: 0.22; cursor: not-allowed; }
 
-  /* gender pills */
   .p-gender-group { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 2px; }
   .p-g-opt { display: none; }
   .p-g-lbl {
@@ -455,32 +449,17 @@ const css = `
     padding: 10px 8px; border-radius: 10px;
     background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
     font-size: 12px; font-weight: 600; color: var(--txt3);
-    cursor: pointer; transition: all 0.18s var(--ease);
-    user-select: none; text-align: center;
+    cursor: pointer; transition: all 0.18s var(--ease); user-select: none; text-align: center;
   }
-  .p-g-lbl:hover {
-    background: rgba(62,207,110,0.07);
-    border-color: rgba(62,207,110,0.22);
-    color: var(--txt2);
-  }
+  .p-g-lbl:hover { background: rgba(62,207,110,0.07); border-color: rgba(62,207,110,0.22); color: var(--txt2); }
   .p-g-opt:checked + .p-g-lbl {
-    background: var(--jade4);
-    border-color: rgba(62,207,110,0.40);
-    color: var(--jade);
+    background: var(--jade4); border-color: rgba(62,207,110,0.40); color: var(--jade);
     box-shadow: 0 0 0 3px rgba(62,207,110,0.07);
   }
 
-  /* form note + divider */
-  .p-form-note {
-    font-family: var(--mono); font-size: 9px;
-    letter-spacing: 1px; color: var(--txt3); margin-top: 4px;
-  }
-  .p-form-sep {
-    height: 1px; margin: 18px 0;
-    background: linear-gradient(90deg, transparent, var(--rim2), transparent);
-  }
+  .p-form-note { font-family: var(--mono); font-size: 9px; letter-spacing: 1px; color: var(--txt3); margin-top: 4px; }
+  .p-form-sep { height: 1px; margin: 18px 0; background: linear-gradient(90deg, transparent, var(--rim2), transparent); }
 
-  /* save / cancel */
   .p-form-btns { display: flex; gap: 10px; flex-wrap: wrap; }
   .p-btn-save {
     padding: 13px 30px; border-radius: 12px; border: none;
@@ -490,10 +469,7 @@ const css = `
     cursor: pointer; transition: all 0.2s var(--ease);
     box-shadow: 0 6px 24px rgba(62,207,110,0.28);
   }
-  .p-btn-save:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 32px rgba(62,207,110,0.38);
-  }
+  .p-btn-save:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(62,207,110,0.38); }
   .p-btn-save:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
   .p-btn-cancel {
     padding: 13px 24px; border-radius: 12px;
@@ -529,8 +505,7 @@ const css = `
   ───────────────────────────────*/
   .p-spin {
     width: 36px; height: 36px;
-    border: 2px solid rgba(255,255,255,0.06);
-    border-top-color: var(--jade);
+    border: 2px solid rgba(255,255,255,0.06); border-top-color: var(--jade);
     border-radius: 50%; animation: spin 0.75s linear infinite;
     margin: 120px auto; display: block;
   }
@@ -556,19 +531,19 @@ const css = `
     .p-identity-row { gap: 16px; }
     .p-action-row { padding-bottom: 4px; }
     .p-tiles { grid-template-columns: 1fr 1fr; }
+    .p-signout-card { flex-direction: column; align-items: flex-start; }
+    .p-signout-btn { width: 100%; justify-content: center; }
   }
   @media (max-width: 400px) {
     .p-action-row { flex-direction: column; align-items: flex-start; }
     .p-tiles { grid-template-columns: 1fr; }
   }
 
-  /* entry animation */
-  .p-fade-up {
-    animation: fadeUp 0.5s var(--ease) both;
-  }
+  .p-fade-up { animation: fadeUp 0.5s var(--ease) both; }
   .p-fade-up:nth-child(2) { animation-delay: 0.07s; }
   .p-fade-up:nth-child(3) { animation-delay: 0.14s; }
   .p-fade-up:nth-child(4) { animation-delay: 0.21s; }
+  .p-fade-up:nth-child(5) { animation-delay: 0.28s; }
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(18px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -673,6 +648,12 @@ const Profile = () => {
     } finally { setSaving(false); }
   };
 
+  const doSignOut = () => {
+    localStorage.removeItem("userRole");
+    handleLogout();
+    navigate("/login");
+  };
+
   /* gates */
   if (!loggedIn) return (
     <>
@@ -734,7 +715,7 @@ const Profile = () => {
               <div className="p-email">{user?.email || "—"}</div>
             </div>
 
-            {/* Actions */}
+            {/* Actions — UID only, no sign-out here */}
             <div className="p-action-row">
               {user?.userId && (
                 <div className="p-uid" onClick={copyId} title="Click to copy">
@@ -743,9 +724,6 @@ const Profile = () => {
                   <span className="p-uid-copy">{copied ? "✓" : "⎘"}</span>
                 </div>
               )}
-              <button className="p-logout" onClick={() => { handleLogout(); navigate("/login"); }}>
-                <span>↩</span> Sign Out
-              </button>
             </div>
           </div>
 
@@ -826,7 +804,6 @@ const Profile = () => {
                   </div>
                 ))}
               </div>
-
               {stats.total > 0 && (
                 <div className="p-bar-wrap">
                   <div className="p-bar-head">
@@ -875,29 +852,23 @@ const Profile = () => {
               ) : (
                 <form onSubmit={handleSave}>
                   <div className="p-form-grid">
-
                     <div className="p-field">
                       <label className="p-field-label">👤 &nbsp;Username</label>
                       <input className="p-inp" value={form.username}
                         onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
                         placeholder="Your display name" required minLength={2} />
                     </div>
-
                     <div className="p-field">
                       <label className="p-field-label">📧 &nbsp;Email</label>
                       <input className="p-inp" value={user?.email || ""} disabled placeholder="Cannot be changed" />
                     </div>
-
                     <div className="p-field">
                       <label className="p-field-label">📱 &nbsp;Phone</label>
                       <input className="p-inp" type="tel" value={form.phone}
                         onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
                         placeholder="+91 98765 43210" maxLength={15} />
                     </div>
-
                   </div>
-
-                  {/* Gender — full row */}
                   <div className="p-field" style={{ marginTop: 16 }}>
                     <label className="p-field-label">⚧️ &nbsp;Gender</label>
                     <div className="p-gender-group">
@@ -919,10 +890,8 @@ const Profile = () => {
                       ))}
                     </div>
                   </div>
-
                   <div className="p-form-sep" />
                   <p className="p-form-note">* Email and User ID are permanent and cannot be changed · Phone and gender are optional</p>
-
                   <div className="p-form-btns" style={{ marginTop: 18 }}>
                     <button type="submit" className="p-btn-save" disabled={saving}>
                       {saving ? "Saving…" : "✓  Save Changes"}
@@ -937,6 +906,25 @@ const Profile = () => {
                   </div>
                 </form>
               )}
+            </div>
+          </div>
+
+          {/* ── Sign Out Card ── */}
+          <div className="p-full p-fade-up">
+            <div className="p-signout-card">
+              <div className="p-signout-card-left">
+                <div className="p-signout-card-ico">🚪</div>
+                <div>
+                  <div className="p-signout-card-title">Sign Out of FeedForward</div>
+                  <div className="p-signout-card-sub">
+                    You'll be redirected to the login page.<br />
+                    Your data and settings will be saved.
+                  </div>
+                </div>
+              </div>
+              <button className="p-signout-btn" onClick={doSignOut}>
+                <span>↩</span> Sign Out
+              </button>
             </div>
           </div>
 

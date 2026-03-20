@@ -20,6 +20,7 @@ import NutritionAnalysis from "./pages/NutritionAnalysis";
 import NourishInitiative from "./pages/NourishInitiative";
 import Display           from "./pages/Display";
 import Profile           from "./pages/Profile";
+import FindRecipients    from "./pages/FindRecipients";   // ← NEW
 
 import { AuthProvider, AuthContext } from "./AuthContext";
 
@@ -70,6 +71,10 @@ function Layout() {
         <Route
           path="/profile"
           element={<PrivateRoute element={<Profile />} />}
+        />
+        <Route
+          path="/find-recipients"
+          element={<PrivateRoute element={<FindRecipients />} />}
         />
 
         {/* ── 404 → redirect home ── */}
